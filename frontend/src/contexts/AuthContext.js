@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { authApi } from '../api/client';
 
 /**
- * Authentication context for MASH AI
+ * Authentication context for CanonSafe
  * Manages user authentication state across the application
  */
 const AuthContext = createContext(null);

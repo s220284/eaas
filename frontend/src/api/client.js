@@ -3,7 +3,7 @@ import axios from 'axios';
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 
 /**
- * Axios instance configured for MASH AI API
+ * Axios instance configured for CanonSafe API
  * Includes automatic token injection and response/error handling
  */
 const apiClient = axios.create({

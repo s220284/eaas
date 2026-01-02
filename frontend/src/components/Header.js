@@ -7,10 +7,10 @@ function Header() {
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center">
-              <span className="text-2xl">M</span>
+              <span className="text-2xl">C</span>
             </div>
             <div>
-              <h1 className="text-xl font-bold">MASH AI</h1>
+              <h1 className="text-xl font-bold">CanonSafe<sup className="text-xs">&#8482;</sup></h1>
               <p className="text-xs text-mash-200">Character Trust Layer</p>
             </div>
           </div>
