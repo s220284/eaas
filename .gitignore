@@ -47,3 +47,13 @@ credentials/
 *.key
 secrets.json
 .env.local
+.env.production
+
+# Frontend
+frontend/node_modules/
+frontend/build/
+frontend/.env.local
+frontend/.env.production.local
+
+# Docker
+.docker/

@@ -1,0 +1,44 @@
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__
+*.py[cod]
+*$py.class
+venv/
+.venv/
+env/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# Tests
+tests/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Local development
+*.db
+*.sqlite
+*.sqlite3
+.env
+.env.*
+
+# Frontend (separate deployment)
+frontend/
+
+# Documentation
+docs/
+*.md
+!README.md
+
+# Scripts
+scripts/
+
+# OS
+.DS_Store
+Thumbs.db

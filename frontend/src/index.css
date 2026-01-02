@@ -1,0 +1,30 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom animations */
+@keyframes pulse-score {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+.animate-pulse-score {
+  animation: pulse-score 2s ease-in-out infinite;
+}
+
+/* Score gauge styles */
+.score-gauge {
+  background: conic-gradient(
+    var(--gauge-color) calc(var(--score) * 3.6deg),
+    #e5e7eb calc(var(--score) * 3.6deg)
+  );
+}
