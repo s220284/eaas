@@ -113,20 +113,85 @@ def main():
         char_name = char_data['name']
         print(f"  Creating: {char_name}...", end=" ")
 
-        # Prepare character card data
+        # Prepare character card data with complete version
         slug = char_name.lower().replace(' ', '-').replace('.', '')
+        canon_pack = char_data.get('canon_pack', {})
+
+        # Convert facts list to dict
+        canon_facts = {}
+        for fact in canon_pack.get('facts', []):
+            fact_id = fact['fact_id']
+            canon_facts[fact_id] = {
+                'value': fact['value'],
+                'source': fact.get('source', ''),
+                'confidence': fact.get('confidence', 1.0)
+            }
+
+        # Keep relationships as list
+        canon_relationships = [
+            {
+                'character_name': rel['character_name'],
+                'relationship_type': rel['relationship_type'],
+                'description': rel.get('description', '')
+            }
+            for rel in canon_pack.get('relationships', [])
+        ]
+
+        # Canon voice
+        voice = canon_pack.get('voice', {})
+        canon_voice = {
+            'personality_traits': voice.get('personality_traits', []),
+            'tone': voice.get('tone', ''),
+            'speech_style': voice.get('speech_style', ''),
+            'vocabulary_level': voice.get('vocabulary_level', ''),
+            'catchphrases': voice.get('catchphrases', []),
+            'emotional_range': voice.get('emotional_range', '')
+        }
+
+        # Legal pack
+        legal_rights = {
+            'name': 'Entertainment One / Hasbro',
+            'territories': ['Worldwide']
+        }
+
+        legal_performer_consent = {
+            'type': 'AI_VOICE_REFERENCE',
+            'performer_name': 'Various voice actors',
+            'scope': 'Character portrayal for educational and entertainment purposes',
+            'restrictions': [
+                'No impersonation of voice actors',
+                'AI disclosure required',
+                'Must maintain character integrity'
+            ]
+        }
+
+        # Safety pack
+        safety_prohibited_topics = [
+            {'topic': 'violence', 'severity': 'strict', 'rationale': 'Preschool audience'},
+            {'topic': 'weapons', 'severity': 'strict', 'rationale': 'Not age-appropriate'},
+            {'topic': 'scary_content', 'severity': 'strict', 'rationale': 'May frighten children'},
+            {'topic': 'adult_themes', 'severity': 'strict', 'rationale': 'Preschool content only'},
+            {'topic': 'profanity', 'severity': 'strict', 'rationale': 'Family-friendly'},
+            {'topic': 'bullying', 'severity': 'strict', 'rationale': 'Promotes positive relationships'},
+            {'topic': 'dangerous_activities', 'severity': 'strict', 'rationale': 'Safety concern'},
+        ]
+
         character_payload = {
             "name": char_name,
             "slug": slug,
             "franchise_id": franchise_id,
-            "canon_facts": char_data.get('canon_facts', []),
-            "relationships": char_data.get('relationships', []),
-            "personality_traits": char_data.get('voice_profile', {}).get('personality', []),
-            "tone_tags": char_data.get('voice_profile', {}).get('tone', []),
-            "speech_style_notes": char_data.get('voice_profile', {}).get('speech_style', ''),
-            "catchphrases": char_data.get('voice_profile', {}).get('catchphrases', []),
-            "legal_owner": char_data.get('legal_pack', {}).get('rights_holder', ''),
-            "performer_consent_status": char_data.get('legal_pack', {}).get('performer_consent', '')
+            "initial_version": {
+                "canon_facts": canon_facts,
+                "canon_voice": canon_voice,
+                "canon_relationships": canon_relationships,
+                "legal_rights": legal_rights,
+                "legal_performer_consent": legal_performer_consent,
+                "safety_content_rating": "G",
+                "safety_prohibited_topics": safety_prohibited_topics,
+                "safety_required_disclosures": ["This is an AI-generated character experience"],
+                "safety_age_gating": {"enabled": False, "minimum_age": 0},
+                "change_summary": "Initial version"
+            }
         }
 
         response = requests.post(

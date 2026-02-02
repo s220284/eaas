@@ -7,6 +7,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import Characters from './pages/Characters';
+import CharacterWorkspace from './pages/CharacterWorkspace';
 import Franchises from './pages/Franchises';
 import TestSuites from './pages/TestSuites';
 import Evaluations from './pages/Evaluations';
@@ -94,6 +95,7 @@ function App() {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/characters" element={<Characters />} />
             <Route path="/characters/:id" element={<Characters />} />
+            <Route path="/characters/:id/workspace" element={<CharacterWorkspace />} />
             <Route path="/franchises" element={<Franchises />} />
             <Route path="/test-suites" element={<TestSuites />} />
             <Route path="/evaluations" element={<Evaluations />} />

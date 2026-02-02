@@ -1146,10 +1146,8 @@ const Characters = () => {
   };
 
   const handleSelect = (character) => {
-    setSelectedCharacter(character);
-    setIsEditing(true);
-    setIsNew(false);
-    navigate(`/characters/${character.id}`);
+    // Navigate to full workspace instead of opening modal
+    navigate(`/characters/${character.id}/workspace`);
   };
 
   const handleCancel = () => {
