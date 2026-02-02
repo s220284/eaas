@@ -29,9 +29,9 @@ class Settings(BaseSettings):
         origins = self.cors_origins.copy()
         if self.frontend_url and self.frontend_url not in origins:
             origins.append(self.frontend_url)
-        # Also allow the Vercel preview URLs
+        # Explicitly allow production Vercel domain
         if self.environment == "production":
-            origins.append("https://*.vercel.app")
+            origins.append("https://eaas-mu.vercel.app")
         return origins
 
     # Authentication
