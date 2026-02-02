@@ -10,6 +10,7 @@ import Characters from './pages/Characters';
 import Franchises from './pages/Franchises';
 import TestSuites from './pages/TestSuites';
 import Evaluations from './pages/Evaluations';
+import DataQualityDashboard from './pages/DataQualityDashboard';
 import Settings from './pages/Settings';
 import UserManual from './pages/UserManual';
 import Layout from './components/Layout';
@@ -96,6 +97,7 @@ function App() {
             <Route path="/franchises" element={<Franchises />} />
             <Route path="/test-suites" element={<TestSuites />} />
             <Route path="/evaluations" element={<Evaluations />} />
+            <Route path="/data-quality" element={<DataQualityDashboard />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/user-manual" element={<UserManual />} />
           </Route>

@@ -286,6 +286,44 @@ export const testSuitesApi = {
 };
 
 // ============================================================================
+// Data Quality API
+// ============================================================================
+
+export const dataQualityApi = {
+  /**
+   * Get data quality overview
+   */
+  getOverview: async () => {
+    const response = await apiClient.get('/api/v1/data-quality/overview');
+    return response.data;
+  },
+
+  /**
+   * Get character quality list with filters
+   */
+  getCharacters: async (params = {}) => {
+    const response = await apiClient.get('/api/v1/data-quality/characters', { params });
+    return response.data;
+  },
+
+  /**
+   * Get detailed quality info for a character
+   */
+  getCharacterQuality: async (id) => {
+    const response = await apiClient.get(`/api/v1/data-quality/characters/${id}/quality`);
+    return response.data;
+  },
+
+  /**
+   * Get data quality issues
+   */
+  getIssues: async (params = {}) => {
+    const response = await apiClient.get('/api/v1/data-quality/issues', { params });
+    return response.data;
+  },
+};
+
+// ============================================================================
 // Dashboard/Stats API
 // ============================================================================
 
