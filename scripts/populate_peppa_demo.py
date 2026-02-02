@@ -97,14 +97,15 @@ def main():
                     'confidence': fact.get('confidence', 1.0)
                 }
 
-            # Convert relationships list to dict
-            canon_relationships = {}
-            for i, rel in enumerate(canon_pack.get('relationships', [])):
-                canon_relationships[str(i)] = {
+            # Keep relationships as a list (don't convert to dict)
+            canon_relationships = [
+                {
                     'character_name': rel['character_name'],
                     'relationship_type': rel['relationship_type'],
                     'description': rel.get('description', '')
                 }
+                for rel in canon_pack.get('relationships', [])
+            ]
 
             # Legal pack (from config)
             legal_rights = {
@@ -134,7 +135,7 @@ def main():
                 {'topic': 'dangerous_activities', 'severity': 'strict', 'rationale': 'Safety concern'},
             ]
 
-            safety_prohibited_dict = {str(i): topic for i, topic in enumerate(safety_prohibited_topics)}
+            # Keep safety_prohibited_topics as a list (don't convert to dict)
 
             version = CardVersion(
                 id=str(uuid.uuid4()),
@@ -146,7 +147,7 @@ def main():
                 legal_rights=legal_rights,
                 legal_performer_consent=legal_performer_consent,
                 safety_content_rating='G',
-                safety_prohibited_topics=safety_prohibited_dict,
+                safety_prohibited_topics=safety_prohibited_topics,
                 safety_required_disclosures=['This is an AI-generated character experience'],
                 safety_age_gating={'enabled': False, 'minimum_age': 0},
                 change_summary='Initial version',
