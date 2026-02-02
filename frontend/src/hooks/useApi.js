@@ -37,7 +37,6 @@ export const useApi = (fetchFn, deps = [], options = {}) => {
         // Error is already set in state
       });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, deps);
 
   return {
@@ -155,7 +154,6 @@ export const usePagination = (fetchFn, options = {}) => {
     fetchPage(initialPage).catch(() => {
       // Error is already set in state
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return {

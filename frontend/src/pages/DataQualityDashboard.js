@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { dataQualityApi, franchisesApi } from '../api/client';
 import { useApi } from '../hooks/useApi';
@@ -22,27 +22,33 @@ export default function DataQualityDashboard() {
     max_score: null,
   });
 
+  // Memoize fetch functions to prevent infinite loops
+  const fetchOverview = useCallback(() => dataQualityApi.getOverview(), []);
+  const fetchCharacters = useCallback(() => dataQualityApi.getCharacters(filters), [filters]);
+  const fetchIssues = useCallback(() => dataQualityApi.getIssues(filters), [filters]);
+  const fetchFranchises = useCallback(() => franchisesApi.getAll(), []);
+
   // Fetch data
   const { data: overview, isLoading: overviewLoading, refetch: refetchOverview } = useApi(
-    () => dataQualityApi.getOverview(),
+    fetchOverview,
     [],
     { immediate: true }
   );
 
   const { data: charactersData, isLoading: charactersLoading, refetch: refetchCharacters } = useApi(
-    () => dataQualityApi.getCharacters(filters),
-    [filters],
+    fetchCharacters,
+    [fetchCharacters],
     { immediate: true }
   );
 
   const { data: issuesData, isLoading: issuesLoading, refetch: refetchIssues } = useApi(
-    () => dataQualityApi.getIssues(filters),
-    [filters],
+    fetchIssues,
+    [fetchIssues],
     { immediate: true }
   );
 
   const { data: franchises } = useApi(
-    () => franchisesApi.getAll(),
+    fetchFranchises,
     [],
     { immediate: true }
   );
