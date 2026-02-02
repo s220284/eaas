@@ -32,10 +32,15 @@
 
 ## Production Credentials
 
-| Service | Account |
-|---------|---------|
-| App Login | shelly@shellypalmer.com / MashAI2026! |
-| GCP Project | mash-ai-prod |
+**⚠️ SECURITY NOTE:** Production credentials are stored securely in:
+- GCP Secret Manager (API keys, database credentials)
+- Local `.env` files (NOT committed to Git)
+- Password manager (user passwords)
+
+| Service | Access Method |
+|---------|---------------|
+| Production App | Contact admin for credentials |
+| GCP Project | mash-ai-prod (IAM-controlled) |
 | Vercel | Linked to GitHub repo |
 
 ---

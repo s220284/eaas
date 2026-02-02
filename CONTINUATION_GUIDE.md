@@ -12,7 +12,7 @@ Quick reference for resuming work on this project.
 | Backend API | https://mash-ai-backend-611530284830.us-central1.run.app |
 | GitHub | https://github.com/s220284/eaas |
 
-**Login:** shelly@shellypalmer.com / MashAI2026!
+**Login:** Use credentials from password manager
 
 ---
 

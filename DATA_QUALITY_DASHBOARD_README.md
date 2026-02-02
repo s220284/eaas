@@ -150,7 +150,7 @@ Frontend Rendering
 
 ### Demo Account
 - **Username**: peppapig@demo.canonsafe.com
-- **Password**: Peppa
+- **Password**: (Contact admin for demo credentials)
 - **Organization**: Hasbro
 - **Franchise**: Peppa Pig (5 characters loaded)
 

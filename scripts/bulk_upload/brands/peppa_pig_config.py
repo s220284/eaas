@@ -12,7 +12,8 @@ FRANCHISE_DESCRIPTION = "Peppa Pig is a British preschool animated television se
 
 # Demo account credentials
 DEMO_EMAIL = "peppapig@demo.canonsafe.com"
-DEMO_PASSWORD = "Peppa"
+import os
+DEMO_PASSWORD = os.environ.get("DEMO_PASSWORD", "CHANGE_ME")
 DEMO_USER_NAME = "Peppa Pig"
 
 # Data sources
