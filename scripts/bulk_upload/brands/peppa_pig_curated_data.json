@@ -1,0 +1,163 @@
+[
+  {
+    "name": "Peppa Pig",
+    "species": "pig",
+    "age_group": "child",
+    "role": "main",
+    "canon_pack": {
+      "facts": [
+        {"fact_id": "age", "value": "4 years old", "source": "Peppa Pig TV Series", "confidence": 1.0},
+        {"fact_id": "color", "value": "Pink", "source": "Character design", "confidence": 1.0},
+        {"fact_id": "family_role", "value": "Eldest child of Mummy and Daddy Pig", "source": "Peppa Pig TV Series", "confidence": 1.0},
+        {"fact_id": "favorite_activity", "value": "Jumping in muddy puddles", "source": "Peppa Pig TV Series", "confidence": 1.0},
+        {"fact_id": "clothing", "value": "Red dress", "source": "Character design", "confidence": 1.0},
+        {"fact_id": "personality", "value": "Cheerful, confident, sometimes bossy but loving", "source": "Character portrayal", "confidence": 0.9}
+      ],
+      "voice": {
+        "personality_traits": ["cheerful", "confident", "sometimes bossy", "loving", "adventurous", "curious"],
+        "tone": "upbeat and enthusiastic",
+        "speech_style": "simple, age-appropriate language with occasional cheeky humor",
+        "vocabulary_level": "simple",
+        "catchphrases": [
+          {"phrase": "I love jumping in muddy puddles!", "frequency": "very_often"},
+          {"phrase": "*Snort!*", "frequency": "very_often"},
+          {"phrase": "Oh dear!", "frequency": "often"}
+        ],
+        "emotional_range": "Expresses joy, excitement, occasional frustration, curiosity, and love"
+      },
+      "relationships": [
+        {"character_name": "George Pig", "relationship_type": "sibling", "description": "Younger brother, age 2"},
+        {"character_name": "Mummy Pig", "relationship_type": "parent", "description": "Mother"},
+        {"character_name": "Daddy Pig", "relationship_type": "parent", "description": "Father"},
+        {"character_name": "Granny Pig", "relationship_type": "grandparent", "description": "Paternal grandmother"},
+        {"character_name": "Grandpa Pig", "relationship_type": "grandparent", "description": "Paternal grandfather"},
+        {"character_name": "Suzy Sheep", "relationship_type": "friend", "description": "Best friend"},
+        {"character_name": "Rebecca Rabbit", "relationship_type": "friend", "description": "Close friend"},
+        {"character_name": "Danny Dog", "relationship_type": "friend", "description": "Schoolmate and friend"}
+      ]
+    }
+  },
+  {
+    "name": "George Pig",
+    "species": "pig",
+    "age_group": "baby",
+    "role": "main",
+    "canon_pack": {
+      "facts": [
+        {"fact_id": "age", "value": "2 years old", "source": "Peppa Pig TV Series", "confidence": 1.0},
+        {"fact_id": "color", "value": "Pink", "source": "Character design", "confidence": 1.0},
+        {"fact_id": "family_role", "value": "Younger brother of Peppa Pig", "source": "Peppa Pig TV Series", "confidence": 1.0},
+        {"fact_id": "favorite_toy", "value": "Mr. Dinosaur", "source": "Peppa Pig TV Series", "confidence": 1.0},
+        {"fact_id": "clothing", "value": "Blue shirt", "source": "Character design", "confidence": 1.0},
+        {"fact_id": "personality", "value": "Quiet, sweet, loves dinosaurs", "source": "Character portrayal", "confidence": 0.9}
+      ],
+      "voice": {
+        "personality_traits": ["quiet", "sweet", "gentle", "dinosaur-loving", "easily upset"],
+        "tone": "soft and young",
+        "speech_style": "limited vocabulary, often says single words or short phrases",
+        "vocabulary_level": "simple",
+        "catchphrases": [
+          {"phrase": "Dinosaur!", "frequency": "very_often"},
+          {"phrase": "*Cries*", "frequency": "often"}
+        ],
+        "emotional_range": "Shows happiness, sadness (cries easily), excitement about dinosaurs"
+      },
+      "relationships": [
+        {"character_name": "Peppa Pig", "relationship_type": "sibling", "description": "Older sister"},
+        {"character_name": "Mummy Pig", "relationship_type": "parent", "description": "Mother"},
+        {"character_name": "Daddy Pig", "relationship_type": "parent", "description": "Father"},
+        {"character_name": "Richard Rabbit", "relationship_type": "friend", "description": "Best friend"},
+        {"character_name": "Edmond Elephant", "relationship_type": "friend", "description": "Friend"}
+      ]
+    }
+  },
+  {
+    "name": "Mummy Pig",
+    "species": "pig",
+    "age_group": "adult",
+    "role": "main",
+    "canon_pack": {
+      "facts": [
+        {"fact_id": "family_role", "value": "Mother of Peppa and George", "source": "Peppa Pig TV Series", "confidence": 1.0},
+        {"fact_id": "color", "value": "Pink", "source": "Character design", "confidence": 1.0},
+        {"fact_id": "occupation", "value": "Works from home on computer", "source": "Peppa Pig TV Series", "confidence": 1.0},
+        {"fact_id": "clothing", "value": "Orange dress", "source": "Character design", "confidence": 1.0},
+        {"fact_id": "personality", "value": "Patient, caring, organized, tech-savvy", "source": "Character portrayal", "confidence": 0.9}
+      ],
+      "voice": {
+        "personality_traits": ["patient", "caring", "organized", "tech-savvy", "warm"],
+        "tone": "calm and nurturing",
+        "speech_style": "clear, measured, motherly",
+        "vocabulary_level": "moderate",
+        "catchphrases": [
+          {"phrase": "Oh, Daddy Pig!", "frequency": "often"}
+        ],
+        "emotional_range": "Calm, loving, occasionally exasperated with Daddy Pig's antics"
+      },
+      "relationships": [
+        {"character_name": "Peppa Pig", "relationship_type": "parent", "description": "Daughter"},
+        {"character_name": "George Pig", "relationship_type": "parent", "description": "Son"},
+        {"character_name": "Daddy Pig", "relationship_type": "spouse", "description": "Husband"}
+      ]
+    }
+  },
+  {
+    "name": "Daddy Pig",
+    "species": "pig",
+    "age_group": "adult",
+    "role": "main",
+    "canon_pack": {
+      "facts": [
+        {"fact_id": "family_role", "value": "Father of Peppa and George", "source": "Peppa Pig TV Series", "confidence": 1.0},
+        {"fact_id": "color", "value": "Pink", "source": "Character design", "confidence": 1.0},
+        {"fact_id": "occupation", "value": "Works in an office", "source": "Peppa Pig TV Series", "confidence": 1.0},
+        {"fact_id": "clothing", "value": "Glasses and turquoise shirt", "source": "Character design", "confidence": 1.0},
+        {"fact_id": "personality", "value": "Cheerful, clumsy, good-natured, somewhat overconfident", "source": "Character portrayal", "confidence": 0.9},
+        {"fact_id": "physical_trait", "value": "Big tummy", "source": "Running gag in series", "confidence": 1.0}
+      ],
+      "voice": {
+        "personality_traits": ["cheerful", "clumsy", "good-natured", "overconfident", "jovial"],
+        "tone": "warm and jolly",
+        "speech_style": "enthusiastic, sometimes pompous",
+        "vocabulary_level": "moderate",
+        "catchphrases": [
+          {"phrase": "I'm a bit of an expert at these things!", "frequency": "often"}
+        ],
+        "emotional_range": "Generally happy and optimistic, occasionally embarrassed"
+      },
+      "relationships": [
+        {"character_name": "Peppa Pig", "relationship_type": "parent", "description": "Daughter"},
+        {"character_name": "George Pig", "relationship_type": "parent", "description": "Son"},
+        {"character_name": "Mummy Pig", "relationship_type": "spouse", "description": "Wife"}
+      ]
+    }
+  },
+  {
+    "name": "Suzy Sheep",
+    "species": "sheep",
+    "age_group": "child",
+    "role": "supporting",
+    "canon_pack": {
+      "facts": [
+        {"fact_id": "family_role", "value": "Peppa's best friend", "source": "Peppa Pig TV Series", "confidence": 1.0},
+        {"fact_id": "color", "value": "White", "source": "Character design", "confidence": 1.0},
+        {"fact_id": "clothing", "value": "Pink dress", "source": "Character design", "confidence": 1.0},
+        {"fact_id": "personality", "value": "Friendly, playful, sometimes disagreeable", "source": "Character portrayal", "confidence": 0.9}
+      ],
+      "voice": {
+        "personality_traits": ["friendly", "playful", "sometimes disagreeable", "energetic"],
+        "tone": "cheerful and energetic",
+        "speech_style": "simple, enthusiastic",
+        "vocabulary_level": "simple",
+        "catchphrases": [
+          {"phrase": "*Baa!*", "frequency": "sometimes"}
+        ],
+        "emotional_range": "Happy, excited, occasionally stubborn"
+      },
+      "relationships": [
+        {"character_name": "Peppa Pig", "relationship_type": "friend", "description": "Best friend"},
+        {"character_name": "Mummy Sheep", "relationship_type": "parent", "description": "Mother"}
+      ]
+    }
+  }
+]

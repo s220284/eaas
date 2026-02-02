@@ -73,14 +73,14 @@ async def create_character_card(
     """Create a new character card with optional initial version."""
     # Verify the franchise belongs to the user's organization
     franchise = db.query(Franchise).filter(
-        Franchise.id == card.franchise_id,
+        Franchise.id == str(card.franchise_id),
         Franchise.organization_id == current_user.organization_id,
     ).first()
     if not franchise:
         raise HTTPException(status_code=404, detail="Franchise not found")
 
     db_card = CharacterCard(
-        franchise_id=card.franchise_id,
+        franchise_id=str(card.franchise_id),
         name=card.name,
         slug=card.slug,
         status="draft",
@@ -134,7 +134,7 @@ async def list_character_cards(
 
     query = db.query(CharacterCard).filter(CharacterCard.franchise_id.in_(org_franchise_ids))
     if franchise_id:
-        query = query.filter(CharacterCard.franchise_id == franchise_id)
+        query = query.filter(CharacterCard.franchise_id == str(franchise_id))
     if status:
         query = query.filter(CharacterCard.status == status)
     return query.offset(skip).limit(limit).all()
@@ -147,7 +147,7 @@ async def get_character_card(
     current_user: User = Depends(get_current_user),
 ):
     """Get a character card by ID (must belong to user's organization)."""
-    card = db.query(CharacterCard).filter(CharacterCard.id == card_id).first()
+    card = db.query(CharacterCard).filter(CharacterCard.id == str(card_id)).first()
     if not card:
         raise HTTPException(status_code=404, detail="Character card not found")
 
@@ -170,7 +170,7 @@ async def update_character_card(
     current_user: User = Depends(get_current_user),
 ):
     """Update a character card (must belong to user's organization)."""
-    card = db.query(CharacterCard).filter(CharacterCard.id == card_id).first()
+    card = db.query(CharacterCard).filter(CharacterCard.id == str(card_id)).first()
     if not card:
         raise HTTPException(status_code=404, detail="Character card not found")
 
@@ -205,7 +205,7 @@ async def create_card_version(
     current_user: User = Depends(get_current_user),
 ):
     """Create a new version of a character card."""
-    card = db.query(CharacterCard).filter(CharacterCard.id == card_id).first()
+    card = db.query(CharacterCard).filter(CharacterCard.id == str(card_id)).first()
     if not card:
         raise HTTPException(status_code=404, detail="Character card not found")
 
@@ -220,7 +220,7 @@ async def create_card_version(
     # Get next version number
     latest_version = (
         db.query(CardVersion)
-        .filter(CardVersion.character_card_id == card_id)
+        .filter(CardVersion.character_card_id == str(card_id))
         .order_by(CardVersion.version_number.desc())
         .first()
     )
@@ -258,7 +258,7 @@ async def list_card_versions(
     current_user: User = Depends(get_current_user),
 ):
     """List all versions of a character card."""
-    card = db.query(CharacterCard).filter(CharacterCard.id == card_id).first()
+    card = db.query(CharacterCard).filter(CharacterCard.id == str(card_id)).first()
     if not card:
         raise HTTPException(status_code=404, detail="Character card not found")
 
@@ -272,7 +272,7 @@ async def list_card_versions(
 
     return (
         db.query(CardVersion)
-        .filter(CardVersion.character_card_id == card_id)
+        .filter(CardVersion.character_card_id == str(card_id))
         .order_by(CardVersion.version_number.desc())
         .all()
     )
@@ -286,7 +286,7 @@ async def get_card_version(
     current_user: User = Depends(get_current_user),
 ):
     """Get a specific version of a character card."""
-    card = db.query(CharacterCard).filter(CharacterCard.id == card_id).first()
+    card = db.query(CharacterCard).filter(CharacterCard.id == str(card_id)).first()
     if not card:
         raise HTTPException(status_code=404, detail="Character card not found")
 
@@ -300,7 +300,7 @@ async def get_card_version(
 
     version = (
         db.query(CardVersion)
-        .filter(CardVersion.id == version_id, CardVersion.character_card_id == card_id)
+        .filter(CardVersion.id == str(version_id), CardVersion.character_card_id == str(card_id))
         .first()
     )
     if not version:
