@@ -29,9 +29,12 @@ class Settings(BaseSettings):
         origins = self.cors_origins.copy()
         if self.frontend_url and self.frontend_url not in origins:
             origins.append(self.frontend_url)
-        # Explicitly allow production Vercel domain
+        # Allow all Vercel deployments (production and previews)
         if self.environment == "production":
-            origins.append("https://eaas-mu.vercel.app")
+            origins.extend([
+                "https://eaas-mu.vercel.app",
+                "https://eaas-git-main-shellypalmers-projects.vercel.app",
+            ])
         return origins
 
     # Authentication
