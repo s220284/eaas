@@ -58,6 +58,7 @@ class CharacterCard(Base):
     franchise_id = Column(String(36), ForeignKey("franchises.id"))
     name = Column(String(255), nullable=False)
     slug = Column(String(100), nullable=False)
+    image_url = Column(String(500))  # URL to character image
     current_version_id = Column(String(36), ForeignKey("card_versions.id", use_alter=True))
     status = Column(String(50), default="draft")  # draft, pending_approval, approved, archived
     created_by = Column(String(36), ForeignKey("users.id"))

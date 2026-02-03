@@ -130,6 +130,7 @@ class CharacterCardResponse(BaseModel):
     franchise_id: UUID
     name: str
     slug: str
+    image_url: Optional[str] = None
     status: str
     current_version_id: Optional[UUID]
     current_version: Optional[CardVersionResponse] = None
