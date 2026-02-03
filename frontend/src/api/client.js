@@ -167,7 +167,7 @@ export const franchisesApi = {
    * Get all franchises
    */
   getAll: async (params = {}) => {
-    const response = await apiClient.get('/api/v1/characters/franchises/', { params });
+    const response = await apiClient.get('/api/v1/characters/franchises', { params });
     return response.data;
   },
 
