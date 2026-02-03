@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { evaluationsApi, charactersApi } from '../api/client';
+import EvaluationDetail from '../components/EvaluationDetail';
 
 /**
  * Score gauge component
@@ -305,7 +306,7 @@ const QuickEvaluation = ({ characters, onEvaluate }) => {
 /**
  * Evaluation history item
  */
-const EvaluationHistoryItem = ({ evaluation, characters }) => {
+const EvaluationHistoryItem = ({ evaluation, characters, onClick }) => {
   const [expanded, setExpanded] = useState(false);
 
   // Handle both EvalRun format (from /evaluations/) and quick eval format
@@ -334,8 +335,8 @@ const EvaluationHistoryItem = ({ evaluation, characters }) => {
   return (
     <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
       <button
-        onClick={() => setExpanded(!expanded)}
-        className="w-full p-4 flex items-center justify-between hover:bg-gray-50"
+        onClick={onClick}
+        className="w-full p-4 flex items-center justify-between hover:bg-gray-50 cursor-pointer"
       >
         <div className="flex items-center space-x-4 flex-1 min-w-0">
           <div
@@ -448,6 +449,7 @@ const Evaluations = () => {
   const [evaluations, setEvaluations] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('quick');
+  const [selectedEvaluation, setSelectedEvaluation] = useState(null);
 
   const fetchData = useCallback(async () => {
     setIsLoading(true);
@@ -546,7 +548,12 @@ const Evaluations = () => {
           {evaluations.length > 0 ? (
             <div className="space-y-4">
               {evaluations.map((evaluation, index) => (
-                <EvaluationHistoryItem key={evaluation.id || index} evaluation={evaluation} characters={characters} />
+                <EvaluationHistoryItem
+                  key={evaluation.id || index}
+                  evaluation={evaluation}
+                  characters={characters}
+                  onClick={() => setSelectedEvaluation(evaluation)}
+                />
               ))}
             </div>
           ) : (
@@ -572,6 +579,15 @@ const Evaluations = () => {
             </div>
           )}
         </div>
+      )}
+
+      {/* Evaluation Detail Modal */}
+      {selectedEvaluation && (
+        <EvaluationDetail
+          evaluation={selectedEvaluation}
+          character={characters.find(c => c.id === selectedEvaluation.character_card_id)}
+          onClose={() => setSelectedEvaluation(null)}
+        />
       )}
     </div>
   );
