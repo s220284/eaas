@@ -305,8 +305,31 @@ const QuickEvaluation = ({ characters, onEvaluate }) => {
 /**
  * Evaluation history item
  */
-const EvaluationHistoryItem = ({ evaluation }) => {
+const EvaluationHistoryItem = ({ evaluation, characters }) => {
   const [expanded, setExpanded] = useState(false);
+
+  // Handle both EvalRun format (from /evaluations/) and quick eval format
+  const isEvalRun = evaluation.test_suite_id != null;
+
+  // Find character by ID
+  const character = characters?.find(c => c.id === evaluation.character_card_id);
+
+  // For EvalRun format
+  const passed = isEvalRun ? evaluation.failed_tests === 0 : evaluation.passed;
+  const totalScore = isEvalRun ? evaluation.avg_total_score : evaluation.total;
+  const canonScore = isEvalRun ? evaluation.avg_canon_fidelity : evaluation.canon_fidelity;
+  const voiceScore = isEvalRun ? evaluation.avg_voice_consistency : evaluation.voice_consistency;
+  const safetyScore = isEvalRun ? evaluation.avg_brand_safety : evaluation.brand_safety;
+  const legalScore = isEvalRun ? evaluation.avg_legal_compliance : evaluation.legal_compliance;
+
+  // Format date
+  const date = new Date(evaluation.created_at || evaluation.started_at);
+  const formattedDate = date.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
@@ -314,13 +337,13 @@ const EvaluationHistoryItem = ({ evaluation }) => {
         onClick={() => setExpanded(!expanded)}
         className="w-full p-4 flex items-center justify-between hover:bg-gray-50"
       >
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-4 flex-1 min-w-0">
           <div
-            className={`w-10 h-10 rounded-full flex items-center justify-center ${
-              evaluation.passed ? 'bg-green-100' : 'bg-red-100'
+            className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
+              passed ? 'bg-green-100' : 'bg-red-100'
             }`}
           >
-            {evaluation.passed ? (
+            {passed ? (
               <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
@@ -330,13 +353,19 @@ const EvaluationHistoryItem = ({ evaluation }) => {
               </svg>
             )}
           </div>
-          <div className="text-left">
-            <p className="font-medium text-gray-900">{evaluation.character?.name || 'Unknown'}</p>
-            <p className="text-sm text-gray-500 truncate max-w-xs">{evaluation.prompt}</p>
+          <div className="text-left min-w-0 flex-1">
+            <p className="font-medium text-gray-900">{character?.name || 'Unknown'}</p>
+            {isEvalRun ? (
+              <p className="text-sm text-gray-500">
+                {evaluation.total_tests} test{evaluation.total_tests !== 1 ? 's' : ''} • {formattedDate} • {evaluation.model_name}
+              </p>
+            ) : (
+              <p className="text-sm text-gray-500 truncate">{evaluation.prompt}</p>
+            )}
           </div>
         </div>
-        <div className="flex items-center space-x-4">
-          <span className="text-lg font-bold text-gray-900">{evaluation.total}%</span>
+        <div className="flex items-center space-x-4 flex-shrink-0 ml-4">
+          <span className="text-lg font-bold text-gray-900">{totalScore?.toFixed(1) || '—'}%</span>
           <svg
             className={`w-5 h-5 text-gray-400 transform transition-transform ${
               expanded ? 'rotate-180' : ''
@@ -354,34 +383,56 @@ const EvaluationHistoryItem = ({ evaluation }) => {
         <div className="p-4 border-t border-gray-200 bg-gray-50">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
             <div className="text-center">
-              <p className="text-2xl font-bold text-green-600">{evaluation.canon_fidelity}%</p>
+              <p className="text-2xl font-bold text-green-600">{canonScore?.toFixed(1) || '—'}%</p>
               <p className="text-xs text-gray-500">Canon</p>
             </div>
             <div className="text-center">
-              <p className="text-2xl font-bold text-purple-600">{evaluation.voice_consistency}%</p>
+              <p className="text-2xl font-bold text-purple-600">{voiceScore?.toFixed(1) || '—'}%</p>
               <p className="text-xs text-gray-500">Voice</p>
             </div>
             <div className="text-center">
-              <p className="text-2xl font-bold text-yellow-600">{evaluation.brand_safety}%</p>
+              <p className="text-2xl font-bold text-yellow-600">{safetyScore?.toFixed(1) || '—'}%</p>
               <p className="text-xs text-gray-500">Safety</p>
             </div>
             <div className="text-center">
-              <p className="text-2xl font-bold text-blue-600">{evaluation.legal_compliance}%</p>
+              <p className="text-2xl font-bold text-blue-600">{legalScore?.toFixed(1) || '—'}%</p>
               <p className="text-xs text-gray-500">Legal</p>
             </div>
           </div>
-          <div className="space-y-2">
-            <div>
-              <p className="text-xs font-medium text-gray-500 mb-1">Prompt</p>
-              <p className="text-sm text-gray-700 bg-white p-2 rounded border">{evaluation.prompt}</p>
+
+          {isEvalRun ? (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-gray-600">Status:</span>
+                <span className={`font-medium ${evaluation.status === 'completed' ? 'text-green-600' : 'text-yellow-600'}`}>
+                  {evaluation.status}
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-gray-600">Results:</span>
+                <span className="font-medium text-gray-900">
+                  {evaluation.passed_tests} passed, {evaluation.failed_tests} failed
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-gray-600">Model:</span>
+                <span className="font-medium text-gray-900">{evaluation.model_provider}/{evaluation.model_name}</span>
+              </div>
             </div>
-            <div>
-              <p className="text-xs font-medium text-gray-500 mb-1">Response</p>
-              <p className="text-sm text-gray-700 bg-white p-2 rounded border line-clamp-3">
-                {evaluation.response}
-              </p>
+          ) : (
+            <div className="space-y-2">
+              <div>
+                <p className="text-xs font-medium text-gray-500 mb-1">Prompt</p>
+                <p className="text-sm text-gray-700 bg-white p-2 rounded border">{evaluation.prompt}</p>
+              </div>
+              <div>
+                <p className="text-xs font-medium text-gray-500 mb-1">Response</p>
+                <p className="text-sm text-gray-700 bg-white p-2 rounded border line-clamp-3">
+                  {evaluation.response}
+                </p>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       )}
     </div>
@@ -495,7 +546,7 @@ const Evaluations = () => {
           {evaluations.length > 0 ? (
             <div className="space-y-4">
               {evaluations.map((evaluation, index) => (
-                <EvaluationHistoryItem key={evaluation.id || index} evaluation={evaluation} />
+                <EvaluationHistoryItem key={evaluation.id || index} evaluation={evaluation} characters={characters} />
               ))}
             </div>
           ) : (
