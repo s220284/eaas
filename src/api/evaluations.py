@@ -264,6 +264,35 @@ async def get_eval_run(
     return run
 
 
+# Evaluation History endpoint (lists all eval runs)
+@router.get("/", response_model=List[EvalRunResponse])
+async def list_evaluations(
+    character_card_id: UUID = None,
+    skip: int = 0,
+    limit: int = 100,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """List all evaluation runs for the current user's organization."""
+    # Get all character card IDs for the user's organization
+    org_franchise_ids = [
+        f.id for f in db.query(Franchise.id).filter(
+            Franchise.organization_id == str(current_user.organization_id)
+        ).all()
+    ]
+    org_card_ids = [
+        c.id for c in db.query(CharacterCard.id).filter(
+            CharacterCard.franchise_id.in_(org_franchise_ids)
+        ).all()
+    ]
+
+    query = db.query(EvalRun).filter(EvalRun.character_card_id.in_(org_card_ids))
+    if character_card_id:
+        query = query.filter(EvalRun.character_card_id == str(character_card_id))
+
+    return query.order_by(EvalRun.created_at.desc()).offset(skip).limit(limit).all()
+
+
 # Quick Evaluation endpoint (for demo)
 @router.post("/evaluate", response_model=EvaluateResponse)
 async def evaluate_response(
