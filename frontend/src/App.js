@@ -11,6 +11,7 @@ import CharacterWorkspace from './pages/CharacterWorkspace';
 import Franchises from './pages/Franchises';
 import TestSuites from './pages/TestSuites';
 import Evaluations from './pages/Evaluations';
+import EvaluationConfigurator from './pages/EvaluationConfigurator';
 import DataQualityDashboard from './pages/DataQualityDashboard';
 import Settings from './pages/Settings';
 import UserManual from './pages/UserManual';
@@ -99,6 +100,7 @@ function App() {
             <Route path="/franchises" element={<Franchises />} />
             <Route path="/test-suites" element={<TestSuites />} />
             <Route path="/evaluations" element={<Evaluations />} />
+            <Route path="/evaluations/configure" element={<EvaluationConfigurator />} />
             <Route path="/data-quality" element={<DataQualityDashboard />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/user-manual" element={<UserManual />} />
