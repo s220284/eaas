@@ -43,7 +43,8 @@ def main():
 
     # Comprehensive franchise data
     franchise_data = {
-        "description": "British preschool animated television series about Peppa Pig and her family and friends",
+        "name": "Peppa Pig",
+        "description": "British preschool animated television series about Peppa Pig and her family and friends. Created by Neville Astley and Mark Baker, the show has become one of the most successful preschool properties globally, broadcast in 180+ countries and dubbed in 40+ languages.",
         "extra_data": {
             "overview": {
                 "genre": "Children's animated television series",
