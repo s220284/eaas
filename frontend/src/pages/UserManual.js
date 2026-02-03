@@ -196,6 +196,7 @@ const UserManual = () => {
         { id: 'create-suite', title: 'Creating Test Suites' },
         { id: 'test-cases', title: 'Test Case Design' },
         { id: 'automated-testing', title: 'Automated Testing' },
+        { id: 'eval-history', title: 'Evaluation History' },
       ],
     },
     {
@@ -1012,6 +1013,45 @@ curl -X POST "https://api.canonsafe.com/api/v1/test-suites/{suite_id}/run" \\
   "details": [...]
 }`}
               />
+
+              <SubSectionHeader id="eval-history" title="Evaluation History" />
+              <p className="text-gray-700 mb-4">
+                All evaluation runs are automatically stored and can be viewed in the Evaluation History tab. This provides a complete audit trail of all testing activity for compliance and quality tracking.
+              </p>
+
+              <div className="bg-gray-50 rounded-lg p-6 mb-6">
+                <h5 className="font-semibold text-gray-900 mb-4">Evaluation Run Details:</h5>
+                <ul className="space-y-2 text-sm">
+                  <li className="flex items-start">
+                    <span className="w-2 h-2 bg-mash-600 rounded-full mt-1.5 mr-2"></span>
+                    <div>
+                      <strong>Run Metadata:</strong> Timestamp, character tested, test suite used, model configuration
+                    </div>
+                  </li>
+                  <li className="flex items-start">
+                    <span className="w-2 h-2 bg-mash-600 rounded-full mt-1.5 mr-2"></span>
+                    <div>
+                      <strong>Aggregate Scores:</strong> Average Canon Fidelity, Voice Consistency, Brand Safety, and Legal Compliance scores
+                    </div>
+                  </li>
+                  <li className="flex items-start">
+                    <span className="w-2 h-2 bg-mash-600 rounded-full mt-1.5 mr-2"></span>
+                    <div>
+                      <strong>Pass/Fail Summary:</strong> Total tests, passed count, failed count, and overall pass rate
+                    </div>
+                  </li>
+                  <li className="flex items-start">
+                    <span className="w-2 h-2 bg-mash-600 rounded-full mt-1.5 mr-2"></span>
+                    <div>
+                      <strong>Individual Results:</strong> Detailed scores and explanations for each test case in the suite
+                    </div>
+                  </li>
+                </ul>
+              </div>
+
+              <InfoBox type="tip" title="Best Practice">
+                <p>Run evaluation suites after every character card update to ensure changes haven't introduced regressions. The History tab makes it easy to compare performance across versions.</p>
+              </InfoBox>
             </section>
 
             {/* SECTION 7: API Reference */}
