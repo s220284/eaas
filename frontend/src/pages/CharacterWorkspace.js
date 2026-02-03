@@ -135,6 +135,13 @@ const CharacterWorkspace = () => {
                 ← Characters
               </button>
               <div className="h-6 w-px bg-gray-300"></div>
+              {character.image_url && (
+                <img
+                  src={character.image_url}
+                  alt={character.name}
+                  className="w-16 h-16 rounded-lg object-cover border-2 border-gray-200"
+                />
+              )}
               <div>
                 <h1 className="text-2xl font-bold text-gray-900 tracking-tight">{character.name}</h1>
                 <p className="text-xs text-gray-500 mt-0.5 uppercase tracking-wider">

@@ -15,9 +15,17 @@ function CharacterCard({ character }) {
       {/* Header */}
       <div className="bg-gradient-to-r from-yellow-400 to-amber-500 p-6">
         <div className="flex items-center space-x-4">
-          <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center text-3xl shadow-lg">
-            W
-          </div>
+          {character.image_url ? (
+            <img
+              src={character.image_url}
+              alt={character.name}
+              className="w-16 h-16 rounded-full object-cover shadow-lg border-2 border-white"
+            />
+          ) : (
+            <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center text-3xl shadow-lg">
+              {character.name?.charAt(0) || 'C'}
+            </div>
+          )}
           <div>
             <h2 className="text-2xl font-bold text-white">{character.name}</h2>
             <p className="text-yellow-100">{character.franchise}</p>
