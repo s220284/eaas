@@ -244,13 +244,15 @@ async def create_eval_run(
             test_case_id=test_case.id,
             model_response=f"Mock response for: {test_case.name}",
             response_latency_ms=random.randint(500, 2000),
-            scores=scores,
-            explanations={
-                "canon_fidelity": "Response aligns with canon",
-                "voice_consistency": "Good voice match",
-                "brand_safety": "Content is safe",
-                "legal_compliance": "No legal issues"
-            },
+            score_canon_fidelity=scores["canon_fidelity"],
+            score_voice_consistency=scores["voice_consistency"],
+            score_brand_safety=scores["brand_safety"],
+            score_legal_compliance=scores["legal_compliance"],
+            score_total=total,
+            explanation_canon="Response aligns with canon",
+            explanation_voice="Good voice match",
+            explanation_safety="Content is safe",
+            explanation_legal="No legal issues",
             passed=is_passed,
             failure_reasons=[] if is_passed else ["Below 90% threshold"],
         )
