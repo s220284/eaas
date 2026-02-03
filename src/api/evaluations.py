@@ -254,7 +254,7 @@ async def get_eval_run(
     current_user: User = Depends(get_current_user),
 ):
     """Get an evaluation run by ID."""
-    run = db.query(EvalRun).filter(EvalRun.id == run_id).first()
+    run = db.query(EvalRun).filter(EvalRun.id == str(run_id)).first()
     if not run:
         raise HTTPException(status_code=404, detail="Evaluation run not found")
 
@@ -262,6 +262,30 @@ async def get_eval_run(
     verify_card_ownership(db, run.character_card_id, current_user.organization_id)
 
     return run
+
+
+@router.delete("/runs/{run_id}")
+async def delete_eval_run(
+    run_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Delete an evaluation run and all its results."""
+    run = db.query(EvalRun).filter(EvalRun.id == str(run_id)).first()
+    if not run:
+        raise HTTPException(status_code=404, detail="Evaluation run not found")
+
+    # Verify the run belongs to the user's organization
+    verify_card_ownership(db, run.character_card_id, current_user.organization_id)
+
+    # Delete associated eval results first
+    db.query(EvalResult).filter(EvalResult.eval_run_id == str(run_id)).delete()
+
+    # Delete the eval run
+    db.delete(run)
+    db.commit()
+
+    return {"detail": "Evaluation run deleted successfully"}
 
 
 # Evaluation History endpoint (lists all eval runs)
