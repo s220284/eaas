@@ -53,6 +53,7 @@ class FranchiseResponse(BaseModel):
     organization_id: UUID
     name: str
     description: Optional[str]
+    image_url: Optional[str]
     extra_data: dict
     created_at: datetime
 

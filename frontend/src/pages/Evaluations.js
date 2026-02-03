@@ -72,9 +72,9 @@ const QuickEvaluation = ({ characters, onEvaluate }) => {
     setIsEvaluating(true);
     try {
       const evalResult = await evaluationsApi.evaluate({
-        character_id: formData.character_id,
+        character_card_id: formData.character_id,
         prompt: formData.prompt,
-        response: formData.response,
+        model_response: formData.response,
       });
       setResult(evalResult);
       if (onEvaluate) onEvaluate(evalResult);

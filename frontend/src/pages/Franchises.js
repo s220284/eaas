@@ -241,11 +241,19 @@ const FranchiseCard = ({ franchise, characterCount, onEdit, onDelete }) => {
       <div className="p-6">
         <div className="flex items-start justify-between">
           <div className="flex items-center space-x-4">
-            <div className="w-14 h-14 bg-gradient-to-br from-mash-500 to-mash-700 rounded-xl flex items-center justify-center">
-              <span className="text-xl font-bold text-white">
-                {franchise.name?.charAt(0) || '?'}
-              </span>
-            </div>
+            {franchise.image_url ? (
+              <img
+                src={franchise.image_url}
+                alt={franchise.name}
+                className="w-14 h-14 rounded-xl object-cover"
+              />
+            ) : (
+              <div className="w-14 h-14 bg-gradient-to-br from-mash-500 to-mash-700 rounded-xl flex items-center justify-center">
+                <span className="text-xl font-bold text-white">
+                  {franchise.name?.charAt(0) || '?'}
+                </span>
+              </div>
+            )}
             <div>
               <h3 className="text-lg font-semibold text-gray-900">{franchise.name}</h3>
               <p className="text-sm text-gray-500">{franchise.owner || 'No owner specified'}</p>
