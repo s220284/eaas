@@ -32,6 +32,7 @@ class Franchise(Base):
     organization_id = Column(String(36), ForeignKey("organizations.id"))
     name = Column(String(255), nullable=False)
     description = Column(Text)
+    image_url = Column(String(500))  # URL to franchise logo/image
     extra_data = Column(JSON, default={})
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

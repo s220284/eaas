@@ -45,7 +45,7 @@ def main():
     # Get all characters
     print("Fetching characters...")
     try:
-        response = requests.get(f"{API_BASE}/characters", headers=headers)
+        response = requests.get(f"{API_BASE}/characters/", headers=headers)
         response.raise_for_status()
         characters = response.json()
         print(f"✓ Found {len(characters)} character(s)")

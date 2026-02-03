@@ -44,6 +44,7 @@ class FranchiseCreate(BaseModel):
     """Schema for creating a franchise."""
     name: str
     description: Optional[str] = None
+    image_url: Optional[str] = None
     extra_data: Optional[dict] = {}
 
 
@@ -53,6 +54,7 @@ class FranchiseResponse(BaseModel):
     organization_id: UUID
     name: str
     description: Optional[str]
+    image_url: Optional[str]
     extra_data: dict
     created_at: datetime
 
