@@ -253,7 +253,7 @@ const QuickEvaluation = ({ characters, onEvaluate }) => {
           {/* Total Score */}
           <div className="mb-6 text-center">
             <div className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-gray-100">
-              <span className="text-3xl font-bold text-gray-900">{result.total}</span>
+              <span className="text-3xl font-bold text-gray-900">{result.scores?.total}</span>
             </div>
             <p className="mt-2 text-sm text-gray-500">Overall Score</p>
           </div>
@@ -262,23 +262,23 @@ const QuickEvaluation = ({ characters, onEvaluate }) => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <ScoreGauge
               label="Canon Fidelity"
-              score={result.canon_fidelity}
-              color={result.canon_fidelity >= 80 ? 'green' : 'red'}
+              score={result.scores?.canon_fidelity}
+              color={result.scores?.canon_fidelity >= 80 ? 'green' : 'red'}
             />
             <ScoreGauge
               label="Voice Consistency"
-              score={result.voice_consistency}
-              color={result.voice_consistency >= 70 ? 'purple' : 'red'}
+              score={result.scores?.voice_consistency}
+              color={result.scores?.voice_consistency >= 70 ? 'purple' : 'red'}
             />
             <ScoreGauge
               label="Brand Safety"
-              score={result.brand_safety}
-              color={result.brand_safety >= 95 ? 'yellow' : 'red'}
+              score={result.scores?.brand_safety}
+              color={result.scores?.brand_safety >= 95 ? 'yellow' : 'red'}
             />
             <ScoreGauge
               label="Legal Compliance"
-              score={result.legal_compliance}
-              color={result.legal_compliance >= 100 ? 'blue' : 'red'}
+              score={result.scores?.legal_compliance}
+              color={result.scores?.legal_compliance >= 100 ? 'blue' : 'red'}
             />
           </div>
 

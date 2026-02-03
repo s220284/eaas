@@ -141,7 +141,7 @@ const Dashboard = () => {
       try {
         // Try to fetch real data, fall back to demo data
         const [charactersRes] = await Promise.allSettled([
-          charactersApi.getAll({ limit: 5 }),
+          charactersApi.getAll(), // Fetch all to get accurate count
         ]);
 
         if (charactersRes.status === 'fulfilled') {
