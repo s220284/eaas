@@ -121,7 +121,7 @@ export const charactersApi = {
    * Get all characters with optional filters
    */
   getAll: async (params = {}) => {
-    const response = await apiClient.get('/api/v1/characters', { params });
+    const response = await apiClient.get('/api/v1/characters/', { params });
     return response.data;
   },
 
