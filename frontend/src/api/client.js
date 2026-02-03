@@ -118,7 +118,7 @@ export const charactersApi = {
    * Get all characters with optional filters
    */
   getAll: async (params = {}) => {
-    const response = await apiClient.get('/api/v1/characters/', { params });
+    const response = await apiClient.get('/api/v1/characters', { params });
     return response.data;
   },
 
@@ -164,7 +164,7 @@ export const franchisesApi = {
    * Get all franchises
    */
   getAll: async (params = {}) => {
-    const response = await apiClient.get('/api/v1/characters/franchises/', { params });
+    const response = await apiClient.get('/api/v1/characters/franchises', { params });
     return response.data;
   },
 
@@ -218,7 +218,7 @@ export const evaluationsApi = {
    * Get all evaluations with optional filters
    */
   getAll: async (params = {}) => {
-    const response = await apiClient.get('/api/v1/evaluations/', { params });
+    const response = await apiClient.get('/api/v1/evaluations', { params });
     return response.data;
   },
 
@@ -240,7 +240,7 @@ export const testSuitesApi = {
    * Get all test suites
    */
   getAll: async (params = {}) => {
-    const response = await apiClient.get('/api/v1/test-suites/', { params });
+    const response = await apiClient.get('/api/v1/test-suites', { params });
     return response.data;
   },
 
