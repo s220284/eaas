@@ -100,8 +100,6 @@ async def update_franchise(
     # Update fields
     franchise.name = franchise_update.name
     franchise.description = franchise_update.description
-    if franchise_update.image_url is not None:
-        franchise.image_url = franchise_update.image_url
     if franchise_update.extra_data is not None:
         franchise.extra_data = franchise_update.extra_data
 
