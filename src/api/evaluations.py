@@ -186,7 +186,7 @@ async def create_eval_run(
         raise HTTPException(status_code=400, detail="No card version available")
 
     # Validate test suite exists and belongs to user's organization
-    suite = db.query(TestSuite).filter(TestSuite.id == run.test_suite_id).first()
+    suite = db.query(TestSuite).filter(TestSuite.id == str(run.test_suite_id)).first()
     if not suite:
         raise HTTPException(status_code=404, detail="Test suite not found")
 
@@ -194,12 +194,12 @@ async def create_eval_run(
     verify_card_ownership(db, suite.character_card_id, current_user.organization_id)
 
     # Count test cases
-    test_count = db.query(TestCase).filter(TestCase.test_suite_id == run.test_suite_id).count()
+    test_count = db.query(TestCase).filter(TestCase.test_suite_id == str(run.test_suite_id)).count()
 
     db_run = EvalRun(
-        character_card_id=run.character_card_id,
-        card_version_id=card_version_id,
-        test_suite_id=run.test_suite_id,
+        character_card_id=str(run.character_card_id),
+        card_version_id=str(card_version_id) if card_version_id else None,
+        test_suite_id=str(run.test_suite_id),
         model_provider=run.model_provider,
         model_name=run.model_name,
         llm_config=run.llm_config,
