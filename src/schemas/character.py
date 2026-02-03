@@ -121,6 +121,7 @@ class CharacterCardCreate(BaseModel):
 class CharacterCardUpdate(BaseModel):
     """Schema for updating a character card."""
     name: Optional[str] = None
+    image_url: Optional[str] = None
     status: Optional[str] = None
 
 

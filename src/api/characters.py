@@ -260,6 +260,8 @@ async def update_character_card(
 
     if update.name is not None:
         card.name = update.name
+    if update.image_url is not None:
+        card.image_url = update.image_url
     if update.status is not None:
         # Validate status transition
         valid_statuses = ["draft", "pending_approval", "approved", "archived"]
