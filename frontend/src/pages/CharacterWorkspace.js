@@ -19,6 +19,7 @@ const CharacterWorkspace = () => {
   const [character, setCharacter] = useState(null);
   const [evaluations, setEvaluations] = useState([]);
   const [versions, setVersions] = useState([]);
+  const [allCharacters, setAllCharacters] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [activeSection, setActiveSection] = useState('canon');
@@ -31,6 +32,7 @@ const CharacterWorkspace = () => {
   useEffect(() => {
     loadCharacter();
     loadEvaluations();
+    loadAllCharacters();
   }, [id]);
 
   const loadCharacter = async () => {
@@ -51,6 +53,15 @@ const CharacterWorkspace = () => {
       setEvaluations(data.slice(0, 10)); // Last 10 evaluations
     } catch (error) {
       console.error('Failed to load evaluations:', error);
+    }
+  };
+
+  const loadAllCharacters = async () => {
+    try {
+      const data = await charactersApi.getAll();
+      setAllCharacters(data);
+    } catch (error) {
+      console.error('Failed to load all characters:', error);
     }
   };
 
@@ -231,7 +242,7 @@ const CharacterWorkspace = () => {
           {/* Main Content Area */}
           <div className="col-span-7">
             {activeSection === 'canon' && (
-              <CanonPack data={version} editMode={editMode} onChange={handleFieldChange} />
+              <CanonPack data={version} editMode={editMode} onChange={handleFieldChange} allCharacters={allCharacters} />
             )}
             {activeSection === 'voice' && (
               <VoicePack data={version} editMode={editMode} onChange={handleFieldChange} />
@@ -314,7 +325,7 @@ const ContentRatingBadge = ({ rating }) => (
 // Section: Canon Pack
 // ============================================================================
 
-const CanonPack = ({ data, editMode, onChange }) => {
+const CanonPack = ({ data, editMode, onChange, allCharacters }) => {
   const facts = data.canon_facts || {};
   const relationships = data.canon_relationships || [];
   const voice = data.canon_voice || {};
@@ -336,7 +347,7 @@ const CanonPack = ({ data, editMode, onChange }) => {
       <DataBlock title="Relationships" count={relationships.length}>
         <div className="space-y-3">
           {relationships.map((rel, idx) => (
-            <RelationshipCard key={idx} relationship={rel} editMode={editMode} />
+            <RelationshipCard key={idx} relationship={rel} editMode={editMode} allCharacters={allCharacters} />
           ))}
         </div>
       </DataBlock>
@@ -608,17 +619,34 @@ const FactCard = ({ factId, fact, editMode }) => (
   </div>
 );
 
-const RelationshipCard = ({ relationship, editMode }) => (
-  <div className="p-4 bg-white border border-gray-200 flex items-center justify-between">
-    <div className="flex-1">
-      <p className="text-sm font-bold text-gray-900">{relationship.character_name}</p>
-      <p className="text-xs text-gray-500 mt-1">{relationship.description}</p>
+const RelationshipCard = ({ relationship, editMode, allCharacters }) => {
+  const navigate = useNavigate();
+
+  const handleClick = () => {
+    // Find character by name
+    const relatedChar = allCharacters?.find(
+      c => c.name.toLowerCase() === relationship.character_name.toLowerCase()
+    );
+    if (relatedChar) {
+      navigate(`/characters/${relatedChar.id}/workspace`);
+    }
+  };
+
+  return (
+    <div
+      onClick={handleClick}
+      className="p-4 bg-white border border-gray-200 flex items-center justify-between cursor-pointer hover:border-indigo-400 hover:bg-indigo-50 transition-all"
+    >
+      <div className="flex-1">
+        <p className="text-sm font-bold text-gray-900">{relationship.character_name}</p>
+        <p className="text-xs text-gray-500 mt-1">{relationship.description}</p>
+      </div>
+      <span className="ml-4 px-3 py-1 bg-indigo-50 text-indigo-700 text-xs font-mono uppercase border border-indigo-200">
+        {relationship.relationship_type}
+      </span>
     </div>
-    <span className="ml-4 px-3 py-1 bg-indigo-50 text-indigo-700 text-xs font-mono uppercase border border-indigo-200">
-      {relationship.relationship_type}
-    </span>
-  </div>
-);
+  );
+};
 
 const EvaluationCard = ({ evaluation }) => {
   const evalScores = evaluation.scores || {};
