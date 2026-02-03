@@ -177,6 +177,7 @@ const UserManual = () => {
         { id: 'canon-facts', title: 'Canon Facts' },
         { id: 'canon-voice', title: 'Canon Voice' },
         { id: 'safety-rules', title: 'Safety Rules' },
+        { id: 'character-workspace', title: 'Character Workspace' },
       ],
     },
     {
@@ -251,7 +252,7 @@ const UserManual = () => {
           <div className="flex items-center text-sm text-mash-200">
             <span>Version 1.0.0</span>
             <span className="mx-3">|</span>
-            <span>Last Updated: January 2026</span>
+            <span>Last Updated: February 2026</span>
           </div>
         </div>
 
@@ -473,11 +474,15 @@ const UserManual = () => {
                   </tr>
                   <tr>
                     <td className="border border-gray-200 px-4 py-2 text-sm text-gray-700">Characters</td>
-                    <td className="border border-gray-200 px-4 py-2 text-sm text-gray-600">Create and manage character cards</td>
+                    <td className="border border-gray-200 px-4 py-2 text-sm text-gray-600">Create and manage character cards; click any character to open workspace</td>
+                  </tr>
+                  <tr>
+                    <td className="border border-gray-200 px-4 py-2 text-sm text-gray-700">Character Workspace</td>
+                    <td className="border border-gray-200 px-4 py-2 text-sm text-gray-600">Detailed view with editable character data, version history, and clickable relationship navigation</td>
                   </tr>
                   <tr>
                     <td className="border border-gray-200 px-4 py-2 text-sm text-gray-700">Franchises</td>
-                    <td className="border border-gray-200 px-4 py-2 text-sm text-gray-600">Organize characters into franchises</td>
+                    <td className="border border-gray-200 px-4 py-2 text-sm text-gray-600">Organize characters into franchises with comprehensive metadata</td>
                   </tr>
                   <tr>
                     <td className="border border-gray-200 px-4 py-2 text-sm text-gray-700">Test Suites</td>
@@ -546,14 +551,62 @@ const UserManual = () => {
 
               <SubSectionHeader id="franchise-settings" title="Franchise Settings" />
               <p className="text-gray-700 mb-4">
-                Each franchise can be configured with specific settings that apply to all characters within it:
+                Each franchise supports comprehensive metadata and settings through the extra_data field,
+                allowing you to capture detailed information about the IP:
               </p>
-              <ul className="list-disc list-inside text-gray-700 space-y-2 mb-4">
-                <li><strong>Default Content Rating</strong> - The baseline content rating for characters</li>
-                <li><strong>Global Prohibited Topics</strong> - Topics banned across all characters in the franchise</li>
-                <li><strong>Brand Guidelines URL</strong> - Link to external brand guidelines documentation</li>
-                <li><strong>Default Judge Model</strong> - Which LLM to use for evaluations</li>
-              </ul>
+
+              <div className="bg-gray-50 rounded-lg p-6 mb-6">
+                <h5 className="font-semibold text-gray-900 mb-4">Franchise Metadata Sections:</h5>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                  <div className="flex items-center">
+                    <span className="w-2 h-2 bg-mash-600 rounded-full mr-2"></span>
+                    <strong>Overview:</strong> Genre, creator, production details, episode count
+                  </div>
+                  <div className="flex items-center">
+                    <span className="w-2 h-2 bg-mash-600 rounded-full mr-2"></span>
+                    <strong>Premise:</strong> Story summary, setting, key themes
+                  </div>
+                  <div className="flex items-center">
+                    <span className="w-2 h-2 bg-mash-600 rounded-full mr-2"></span>
+                    <strong>Main Characters:</strong> Character roster with roles
+                  </div>
+                  <div className="flex items-center">
+                    <span className="w-2 h-2 bg-mash-600 rounded-full mr-2"></span>
+                    <strong>Production:</strong> Animation style, voice direction, technical specs
+                  </div>
+                  <div className="flex items-center">
+                    <span className="w-2 h-2 bg-mash-600 rounded-full mr-2"></span>
+                    <strong>Brand Values:</strong> Core values, educational goals, safety standards
+                  </div>
+                  <div className="flex items-center">
+                    <span className="w-2 h-2 bg-mash-600 rounded-full mr-2"></span>
+                    <strong>Global Reach:</strong> Countries, languages, key markets
+                  </div>
+                  <div className="flex items-center">
+                    <span className="w-2 h-2 bg-mash-600 rounded-full mr-2"></span>
+                    <strong>Voice Guidelines:</strong> General principles, character voice standards
+                  </div>
+                  <div className="flex items-center">
+                    <span className="w-2 h-2 bg-mash-600 rounded-full mr-2"></span>
+                    <strong>Content Guidelines:</strong> Allowed topics, prohibited topics
+                  </div>
+                  <div className="flex items-center">
+                    <span className="w-2 h-2 bg-mash-600 rounded-full mr-2"></span>
+                    <strong>Rights Information:</strong> Copyright holder, licensing administrator
+                  </div>
+                  <div className="flex items-center">
+                    <span className="w-2 h-2 bg-mash-600 rounded-full mr-2"></span>
+                    <strong>Canonical Sources:</strong> Primary sources, non-canonical materials
+                  </div>
+                </div>
+              </div>
+
+              <InfoBox type="important" title="Example: Peppa Pig Franchise">
+                The Peppa Pig franchise in the demo includes 13 comprehensive data sections with information
+                about 180+ broadcast territories, 40+ languages, brand safety standards (G-rating, no violence),
+                official voice guidelines, and complete rights information. This demonstrates best practices
+                for franchise data organization.
+              </InfoBox>
             </section>
 
             {/* SECTION 4: Character Cards */}
@@ -707,6 +760,54 @@ const UserManual = () => {
   ]
 }`}
               />
+
+              <SubSectionHeader id="character-workspace" title="Character Workspace" />
+              <p className="text-gray-700 mb-4">
+                The Character Workspace provides a comprehensive view and editing interface for character cards.
+                Access it by clicking any character name from the Characters page.
+              </p>
+
+              <div className="bg-gray-50 rounded-lg p-6 mb-6">
+                <h5 className="font-semibold text-gray-900 mb-4">Workspace Features:</h5>
+                <ul className="space-y-3 text-sm">
+                  <li className="flex items-start">
+                    <span className="w-2 h-2 bg-mash-600 rounded-full mt-1.5 mr-2"></span>
+                    <div>
+                      <strong>Tabbed Interface:</strong> Organized sections for Canon Pack (facts, voice, relationships), Legal Pack, Safety Pack, and Evaluation History
+                    </div>
+                  </li>
+                  <li className="flex items-start">
+                    <span className="w-2 h-2 bg-mash-600 rounded-full mt-1.5 mr-2"></span>
+                    <div>
+                      <strong>Inline Editing:</strong> Edit character data directly in the workspace with real-time validation
+                    </div>
+                  </li>
+                  <li className="flex items-start">
+                    <span className="w-2 h-2 bg-mash-600 rounded-full mt-1.5 mr-2"></span>
+                    <div>
+                      <strong>Clickable Relationships:</strong> Click on any relationship card to instantly navigate to that character's workspace
+                    </div>
+                  </li>
+                  <li className="flex items-start">
+                    <span className="w-2 h-2 bg-mash-600 rounded-full mt-1.5 mr-2"></span>
+                    <div>
+                      <strong>Version History:</strong> View and restore previous versions of character data with automatic versioning on save
+                    </div>
+                  </li>
+                  <li className="flex items-start">
+                    <span className="w-2 h-2 bg-mash-600 rounded-full mt-1.5 mr-2"></span>
+                    <div>
+                      <strong>Evaluation Preview:</strong> See recent evaluation results directly in the workspace
+                    </div>
+                  </li>
+                </ul>
+              </div>
+
+              <InfoBox type="tip" title="Navigation Tip">
+                Use the clickable relationship cards to quickly navigate between related characters. For example,
+                from Peppa Pig's workspace, click on "George Pig" in the relationships section to jump directly to
+                George's workspace. This makes it easy to maintain consistency across character families.
+              </InfoBox>
             </section>
 
             {/* SECTION 5: Running Evaluations */}
