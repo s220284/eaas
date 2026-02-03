@@ -56,11 +56,87 @@ async def list_franchises(
     """List franchises for the current user's organization."""
     return (
         db.query(Franchise)
-        .filter(Franchise.organization_id == current_user.organization_id)
+        .filter(Franchise.organization_id == str(current_user.organization_id))
         .offset(skip)
         .limit(limit)
         .all()
     )
+
+
+@router.get("/franchises/{franchise_id}", response_model=FranchiseResponse)
+async def get_franchise(
+    franchise_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Get a franchise by ID (must belong to user's organization)."""
+    franchise = db.query(Franchise).filter(Franchise.id == str(franchise_id)).first()
+    if not franchise:
+        raise HTTPException(status_code=404, detail="Franchise not found")
+
+    # Verify the franchise belongs to the user's organization
+    if franchise.organization_id != str(current_user.organization_id):
+        raise HTTPException(status_code=404, detail="Franchise not found")
+
+    return franchise
+
+
+@router.put("/franchises/{franchise_id}", response_model=FranchiseResponse)
+async def update_franchise(
+    franchise_id: UUID,
+    franchise_update: FranchiseCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Update a franchise (must belong to user's organization)."""
+    franchise = db.query(Franchise).filter(Franchise.id == str(franchise_id)).first()
+    if not franchise:
+        raise HTTPException(status_code=404, detail="Franchise not found")
+
+    # Verify the franchise belongs to the user's organization
+    if franchise.organization_id != str(current_user.organization_id):
+        raise HTTPException(status_code=404, detail="Franchise not found")
+
+    # Update fields
+    franchise.name = franchise_update.name
+    franchise.description = franchise_update.description
+    if franchise_update.extra_data is not None:
+        franchise.extra_data = franchise_update.extra_data
+
+    db.commit()
+    db.refresh(franchise)
+    return franchise
+
+
+@router.delete("/franchises/{franchise_id}")
+async def delete_franchise(
+    franchise_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Delete a franchise (must belong to user's organization)."""
+    franchise = db.query(Franchise).filter(Franchise.id == str(franchise_id)).first()
+    if not franchise:
+        raise HTTPException(status_code=404, detail="Franchise not found")
+
+    # Verify the franchise belongs to the user's organization
+    if franchise.organization_id != str(current_user.organization_id):
+        raise HTTPException(status_code=404, detail="Franchise not found")
+
+    # Check if franchise has characters
+    has_characters = db.query(CharacterCard).filter(
+        CharacterCard.franchise_id == str(franchise_id)
+    ).first()
+    if has_characters:
+        raise HTTPException(
+            status_code=400,
+            detail="Cannot delete franchise with existing characters"
+        )
+
+    db.delete(franchise)
+    db.commit()
+
+    return {"detail": "Franchise deleted successfully"}
 
 
 # Character Card endpoints
