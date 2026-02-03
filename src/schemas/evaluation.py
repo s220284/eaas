@@ -7,7 +7,7 @@ from typing import Optional, List, Dict, Any
 from uuid import UUID
 from decimal import Decimal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 
 # Test Suite schemas
@@ -82,6 +82,40 @@ class EvalResultResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+    @model_validator(mode='before')
+    @classmethod
+    def build_dicts_from_fields(cls, data: Any) -> Any:
+        """Build scores and explanations dicts from individual model fields."""
+        if isinstance(data, dict):
+            return data
+
+        # If it's a model instance, extract the fields
+        scores = {
+            "canon_fidelity": float(data.score_canon_fidelity) if data.score_canon_fidelity else None,
+            "voice_consistency": float(data.score_voice_consistency) if data.score_voice_consistency else None,
+            "brand_safety": float(data.score_brand_safety) if data.score_brand_safety else None,
+            "legal_compliance": float(data.score_legal_compliance) if data.score_legal_compliance else None,
+            "total": float(data.score_total) if data.score_total else None,
+        }
+
+        explanations = {
+            "canon": data.explanation_canon,
+            "voice": data.explanation_voice,
+            "safety": data.explanation_safety,
+            "legal": data.explanation_legal,
+        }
+
+        return {
+            "id": data.id,
+            "test_case_id": data.test_case_id,
+            "model_response": data.model_response,
+            "response_latency_ms": data.response_latency_ms,
+            "scores": scores,
+            "explanations": explanations,
+            "passed": data.passed,
+            "failure_reasons": data.failure_reasons or [],
+        }
 
 
 class EvalRunResponse(BaseModel):
