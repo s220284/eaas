@@ -314,13 +314,13 @@ const EvaluationHistoryItem = ({ evaluation, characters }) => {
   // Find character by ID
   const character = characters?.find(c => c.id === evaluation.character_card_id);
 
-  // For EvalRun format
+  // For EvalRun format vs quick eval format
   const passed = isEvalRun ? evaluation.failed_tests === 0 : evaluation.passed;
-  const totalScore = isEvalRun ? evaluation.avg_total_score : evaluation.total;
-  const canonScore = isEvalRun ? evaluation.avg_canon_fidelity : evaluation.canon_fidelity;
-  const voiceScore = isEvalRun ? evaluation.avg_voice_consistency : evaluation.voice_consistency;
-  const safetyScore = isEvalRun ? evaluation.avg_brand_safety : evaluation.brand_safety;
-  const legalScore = isEvalRun ? evaluation.avg_legal_compliance : evaluation.legal_compliance;
+  const totalScore = isEvalRun ? evaluation.avg_total_score : (evaluation.scores?.total || evaluation.total);
+  const canonScore = isEvalRun ? evaluation.avg_canon_fidelity : (evaluation.scores?.canon_fidelity || evaluation.canon_fidelity);
+  const voiceScore = isEvalRun ? evaluation.avg_voice_consistency : (evaluation.scores?.voice_consistency || evaluation.voice_consistency);
+  const safetyScore = isEvalRun ? evaluation.avg_brand_safety : (evaluation.scores?.brand_safety || evaluation.brand_safety);
+  const legalScore = isEvalRun ? evaluation.avg_legal_compliance : (evaluation.scores?.legal_compliance || evaluation.legal_compliance);
 
   // Format date
   const date = new Date(evaluation.created_at || evaluation.started_at);
