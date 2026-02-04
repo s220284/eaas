@@ -621,8 +621,10 @@ const CanonPackEditor = ({ data, onChange }) => {
 
 // Relationships Editor Component
 const RelationshipsEditor = ({ relationships, onChange }) => {
+  const navigate = useNavigate();
   const [newEntity, setNewEntity] = useState('');
   const [newRelType, setNewRelType] = useState('');
+  const [searchingCharacter, setSearchingCharacter] = useState(null);
 
   // Ensure relationships is always an array
   const relationshipsArray = Array.isArray(relationships) ? relationships : [];
@@ -636,6 +638,29 @@ const RelationshipsEditor = ({ relationships, onChange }) => {
 
   const removeRelationship = (index) => {
     onChange(relationshipsArray.filter((_, i) => i !== index));
+  };
+
+  const handleEntityClick = async (entityName) => {
+    setSearchingCharacter(entityName);
+    try {
+      // Search for character by name
+      const characters = await charactersApi.getAll();
+      const matchedCharacter = characters.find(
+        char => char.name.toLowerCase() === entityName.toLowerCase()
+      );
+
+      if (matchedCharacter) {
+        // Navigate to the character's workspace
+        navigate(`/characters/${matchedCharacter.id}/workspace`);
+      } else {
+        alert(`Character "${entityName}" not found. You may need to create this character first.`);
+      }
+    } catch (error) {
+      console.error('Failed to search for character:', error);
+      alert('Failed to search for character');
+    } finally {
+      setSearchingCharacter(null);
+    }
   };
 
   return (
@@ -657,7 +682,14 @@ const RelationshipsEditor = ({ relationships, onChange }) => {
       <div className="space-y-2">
         {relationshipsArray.map((rel, index) => (
           <div key={index} className="group flex items-center space-x-3 p-3 rounded-lg bg-purple-50 border border-purple-200">
-            <span className="flex-1 text-sm font-medium text-gray-900">{rel.entity}</span>
+            <button
+              onClick={() => handleEntityClick(rel.entity)}
+              disabled={searchingCharacter === rel.entity}
+              className="flex-1 text-left text-sm font-medium text-purple-700 hover:text-purple-900 hover:underline cursor-pointer transition-colors disabled:opacity-50"
+              title={`Click to view ${rel.entity}'s workspace`}
+            >
+              {searchingCharacter === rel.entity ? '🔍 Searching...' : rel.entity}
+            </button>
             <span className="text-xs text-purple-600">→</span>
             <span className="flex-1 text-sm text-gray-600">{rel.relationship}</span>
             <button
@@ -864,13 +896,18 @@ const SafetyPackEditor = ({ data, onChange }) => {
               Content this character must avoid
             </p>
           </div>
+          <div className="px-3 py-1 bg-red-50 rounded-lg">
+            <span className="text-xs font-medium text-red-700">
+              {(data.safety_prohibited_topics || []).length} topics
+            </span>
+          </div>
         </div>
 
-        <ArrayField
+        <TaxonomyField
           items={data.safety_prohibited_topics || []}
           onAdd={addTopic}
           onRemove={removeTopic}
-          placeholder="e.g., Violence, Politics, Adult Content"
+          placeholder="Type to search or add custom topic..."
           color="red"
         />
       </div>
@@ -1153,6 +1190,129 @@ const EvaluationSummary = ({ evaluations }) => {
 // ============================================================================
 // Shared Array Field Component
 // ============================================================================
+
+// Taxonomy Field with autocomplete for prohibited topics
+const TaxonomyField = ({ items, onAdd, onRemove, placeholder, color = 'red' }) => {
+  const [newValue, setNewValue] = useState('');
+  const [showSuggestions, setShowSuggestions] = useState(false);
+
+  // Common prohibited topics taxonomy
+  const commonTopics = [
+    'violence', 'weapons', 'scary_content', 'adult_themes', 'profanity',
+    'bullying', 'dangerous_activities', 'hate_speech', 'discrimination',
+    'drugs', 'alcohol', 'gambling', 'politics', 'religion',
+    'self_harm', 'eating_disorders', 'gore', 'sexual_content',
+    'illegal_activities', 'cyberbullying', 'doxxing', 'harassment'
+  ];
+
+  const itemsArray = Array.isArray(items) ? items : [];
+
+  const filteredSuggestions = commonTopics.filter(topic =>
+    topic.toLowerCase().includes(newValue.toLowerCase()) &&
+    !itemsArray.includes(topic)
+  );
+
+  const handleAdd = (value) => {
+    const trimmedValue = (value || newValue).trim();
+    if (trimmedValue && !itemsArray.includes(trimmedValue)) {
+      onAdd(trimmedValue);
+      setNewValue('');
+      setShowSuggestions(false);
+    }
+  };
+
+  const colorClasses = {
+    red: { bg: 'bg-red-100', text: 'text-red-800', button: 'bg-red-600 hover:bg-red-700', border: 'border-red-300' },
+  };
+
+  const colors = colorClasses[color] || colorClasses.red;
+
+  return (
+    <div>
+      <div className="flex flex-wrap gap-2 mb-3">
+        {itemsArray.map((item, index) => (
+          <span
+            key={index}
+            className={`inline-flex items-center px-3 py-1 rounded-full text-sm ${colors.bg} ${colors.text} font-medium`}
+          >
+            {item}
+            <button
+              onClick={() => onRemove(index)}
+              className="ml-2 hover:opacity-70 transition-opacity"
+              title="Remove topic"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </span>
+        ))}
+      </div>
+
+      <div className="relative">
+        <div className="flex space-x-2">
+          <input
+            type="text"
+            value={newValue}
+            onChange={(e) => {
+              setNewValue(e.target.value);
+              setShowSuggestions(e.target.value.length > 0);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                handleAdd();
+              } else if (e.key === 'Escape') {
+                setShowSuggestions(false);
+              }
+            }}
+            onFocus={() => newValue && setShowSuggestions(true)}
+            className={`flex-1 px-3 py-2 text-sm border ${colors.border} rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500`}
+            placeholder={placeholder}
+          />
+          <button
+            onClick={() => handleAdd()}
+            className={`px-5 py-2 text-white text-sm font-medium rounded-lg ${colors.button} transition-colors`}
+          >
+            Add
+          </button>
+        </div>
+
+        {/* Autocomplete suggestions */}
+        {showSuggestions && filteredSuggestions.length > 0 && (
+          <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+            {filteredSuggestions.map((suggestion, index) => (
+              <button
+                key={index}
+                onClick={() => handleAdd(suggestion)}
+                className="w-full text-left px-4 py-2 text-sm hover:bg-red-50 transition-colors border-b border-gray-100 last:border-0"
+              >
+                <span className="font-medium text-gray-900">{suggestion}</span>
+                <span className="text-xs text-gray-500 ml-2">(common topic)</span>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Popular topics quick-add */}
+      <div className="mt-3">
+        <p className="text-xs text-gray-500 mb-2">Quick add popular topics:</p>
+        <div className="flex flex-wrap gap-2">
+          {commonTopics.slice(0, 8).filter(topic => !itemsArray.includes(topic)).map((topic, index) => (
+            <button
+              key={index}
+              onClick={() => handleAdd(topic)}
+              className="px-2 py-1 text-xs bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors"
+            >
+              + {topic}
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const ArrayField = ({ label, items, onAdd, onRemove, placeholder, color = 'gray' }) => {
   const [newValue, setNewValue] = useState('');
