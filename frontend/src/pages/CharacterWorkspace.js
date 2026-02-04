@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { charactersApi, evaluationsApi } from '../api/client';
+import ErrorBoundary from '../components/ErrorBoundary';
 
 /**
  * Character Workspace - Production-grade editing interface
@@ -234,6 +235,7 @@ const CharacterWorkspace = () => {
   }
 
   return (
+    <ErrorBoundary>
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50">
       {/* Sticky Header */}
       <div className="sticky top-0 z-30 bg-white/95 backdrop-blur-sm border-b border-gray-200 shadow-sm">
@@ -1198,4 +1200,11 @@ const ArrayField = ({ label, items, onAdd, onRemove, placeholder, color = 'gray'
   );
 };
 
-export default CharacterWorkspace;
+// Wrap with error boundary for better error visibility
+const CharacterWorkspaceWithErrorBoundary = () => (
+  <ErrorBoundary>
+    <CharacterWorkspace />
+  </ErrorBoundary>
+);
+
+export default CharacterWorkspaceWithErrorBoundary;
