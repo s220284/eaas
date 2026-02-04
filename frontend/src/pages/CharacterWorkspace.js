@@ -592,15 +592,18 @@ const RelationshipsEditor = ({ relationships, onChange }) => {
   const [newEntity, setNewEntity] = useState('');
   const [newRelType, setNewRelType] = useState('');
 
+  // Ensure relationships is always an array
+  const relationshipsArray = Array.isArray(relationships) ? relationships : [];
+
   const addRelationship = () => {
     if (!newEntity.trim() || !newRelType.trim()) return;
-    onChange([...relationships, { entity: newEntity.trim(), relationship: newRelType.trim() }]);
+    onChange([...relationshipsArray, { entity: newEntity.trim(), relationship: newRelType.trim() }]);
     setNewEntity('');
     setNewRelType('');
   };
 
   const removeRelationship = (index) => {
-    onChange(relationships.filter((_, i) => i !== index));
+    onChange(relationshipsArray.filter((_, i) => i !== index));
   };
 
   return (
@@ -620,7 +623,7 @@ const RelationshipsEditor = ({ relationships, onChange }) => {
       </div>
 
       <div className="space-y-2">
-        {relationships.map((rel, index) => (
+        {relationshipsArray.map((rel, index) => (
           <div key={index} className="group flex items-center space-x-3 p-3 rounded-lg bg-purple-50 border border-purple-200">
             <span className="flex-1 text-sm font-medium text-gray-900">{rel.entity}</span>
             <span className="text-xs text-purple-600">→</span>
@@ -1108,6 +1111,9 @@ const EvaluationSummary = ({ evaluations }) => {
 const ArrayField = ({ label, items, onAdd, onRemove, placeholder, color = 'gray' }) => {
   const [newValue, setNewValue] = useState('');
 
+  // Ensure items is always an array
+  const itemsArray = Array.isArray(items) ? items : [];
+
   const handleAdd = () => {
     onAdd(newValue);
     setNewValue('');
@@ -1130,7 +1136,7 @@ const ArrayField = ({ label, items, onAdd, onRemove, placeholder, color = 'gray'
       {label && <label className="block text-sm font-medium text-gray-700 mb-2">{label}</label>}
 
       <div className="flex flex-wrap gap-2 mb-3">
-        {items.map((item, index) => (
+        {itemsArray.map((item, index) => (
           <span
             key={index}
             className={`inline-flex items-center px-3 py-1 rounded-full text-sm ${colors.bg} ${colors.text}`}
