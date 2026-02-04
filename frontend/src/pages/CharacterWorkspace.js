@@ -338,6 +338,7 @@ const CharacterWorkspace = () => {
         </div>
       </div>
     </div>
+    </ErrorBoundary>
   );
 };
 
@@ -1200,11 +1201,4 @@ const ArrayField = ({ label, items, onAdd, onRemove, placeholder, color = 'gray'
   );
 };
 
-// Wrap with error boundary for better error visibility
-const CharacterWorkspaceWithErrorBoundary = () => (
-  <ErrorBoundary>
-    <CharacterWorkspace />
-  </ErrorBoundary>
-);
-
-export default CharacterWorkspaceWithErrorBoundary;
+export default CharacterWorkspace;
