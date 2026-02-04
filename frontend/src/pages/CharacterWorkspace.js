@@ -731,7 +731,7 @@ const VoiceProfileSection = ({ voice, onChange }) => {
         />
         <ArrayField
           label="Catchphrases"
-          items={voice.catchphrases || []}
+          items={(voice.catchphrases || []).map(c => typeof c === 'string' ? c : c.phrase || '')}
           onAdd={(val) => addArrayItem('catchphrases', val)}
           onRemove={(idx) => removeArrayItem('catchphrases', idx)}
           placeholder="e.g., There's a snake in my boot!"
