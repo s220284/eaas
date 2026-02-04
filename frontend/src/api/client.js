@@ -156,6 +156,30 @@ export const charactersApi = {
     const response = await apiClient.delete(`/api/v1/characters/${id}`);
     return response.data;
   },
+
+  /**
+   * Get all versions of a character
+   */
+  getVersions: async (id) => {
+    const response = await apiClient.get(`/api/v1/characters/${id}/versions`);
+    return response.data;
+  },
+
+  /**
+   * Get a specific version of a character
+   */
+  getVersion: async (cardId, versionId) => {
+    const response = await apiClient.get(`/api/v1/characters/${cardId}/versions/${versionId}`);
+    return response.data;
+  },
+
+  /**
+   * Create a new version of a character
+   */
+  createVersion: async (id, data) => {
+    const response = await apiClient.post(`/api/v1/characters/${id}/versions`, data);
+    return response.data;
+  },
 };
 
 // ============================================================================
