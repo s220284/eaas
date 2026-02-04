@@ -327,6 +327,76 @@ export const dataQualityApi = {
 };
 
 // ============================================================================
+// Evaluation Versions API
+// ============================================================================
+
+export const evaluationVersionsApi = {
+  /**
+   * Get all evaluation versions
+   */
+  getAll: async (params = {}) => {
+    const response = await apiClient.get('/api/v1/evaluation-versions/', { params });
+    return response.data;
+  },
+
+  /**
+   * Get a single evaluation version by ID
+   */
+  getById: async (id) => {
+    const response = await apiClient.get(`/api/v1/evaluation-versions/${id}`);
+    return response.data;
+  },
+
+  /**
+   * Get the currently active version
+   */
+  getActive: async () => {
+    const response = await apiClient.get('/api/v1/evaluation-versions/active/current');
+    return response.data;
+  },
+
+  /**
+   * Create a new evaluation version
+   */
+  create: async (data) => {
+    const response = await apiClient.post('/api/v1/evaluation-versions/', data);
+    return response.data;
+  },
+
+  /**
+   * Update an evaluation version
+   */
+  update: async (id, data) => {
+    const response = await apiClient.patch(`/api/v1/evaluation-versions/${id}`, data);
+    return response.data;
+  },
+
+  /**
+   * Activate a version
+   */
+  activate: async (id) => {
+    const response = await apiClient.post(`/api/v1/evaluation-versions/${id}/activate`);
+    return response.data;
+  },
+
+  /**
+   * Delete a version
+   */
+  delete: async (id) => {
+    const response = await apiClient.delete(`/api/v1/evaluation-versions/${id}`);
+    return response.data;
+  },
+
+  /**
+   * Duplicate a version
+   */
+  duplicate: async (id, newName) => {
+    const response = await apiClient.post(`/api/v1/evaluation-versions/${id}/duplicate`, { new_name: newName });
+    return response.data;
+  },
+};
+
+// ============================================================================
 // Dashboard/Stats API
 // ============================================================================
 

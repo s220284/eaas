@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { evaluationVersionsApi } from '../api/client';
 
 /**
  * Evaluation Configurator
@@ -48,48 +49,24 @@ const EvaluationConfigurator = () => {
   }, []);
 
   const loadVersions = async () => {
-    // TODO: Implement API call to GET /api/v1/evaluation-versions
-    // For now, use mock data
-    const mockVersions = [
-      {
-        id: 'v1',
-        version_number: 1,
-        version_name: 'Default Evaluation v1',
-        active: true,
-        total_uses: 127,
-        avg_accuracy_rating: 4.2,
-        created_at: '2026-01-15T10:00:00Z',
-        canon_prompt_template: 'Evaluate if the AI response maintains canonical accuracy for the character {{character_name}}.\n\nCharacter Facts:\n{{canon_facts}}\n\nAI Response:\n{{ai_response}}\n\nProvide a score from 0-100 and explanation.',
-        voice_prompt_template: 'Evaluate if the AI response matches the character voice and personality.\n\nVoice Profile:\n{{voice_profile}}\n\nAI Response:\n{{ai_response}}',
-        safety_prompt_template: 'Check if the AI response violates any safety rules.\n\nProhibited Topics:\n{{prohibited_topics}}\n\nContent Rating: {{content_rating}}',
-        legal_prompt_template: 'Verify legal compliance and rights adherence.',
-        scoring_criteria: {
-          canon_fidelity: {
-            weight: 0.3,
-            description: 'Factual accuracy and canon adherence',
-          },
-          voice_consistency: {
-            weight: 0.3,
-            description: 'Voice and personality match',
-          },
-          brand_safety: {
-            weight: 0.2,
-            description: 'Safety rules compliance',
-          },
-          legal_compliance: {
-            weight: 0.2,
-            description: 'Legal and rights compliance',
-          },
-        },
-        thresholds: {
-          passing_score: 80,
-          excellent_score: 95,
-        },
-      },
-    ];
-    setVersions(mockVersions);
-    setActiveVersion(mockVersions[0]);
-    setEditData(mockVersions[0]);
+    try {
+      const data = await evaluationVersionsApi.getAll();
+      setVersions(Array.isArray(data) ? data : []);
+
+      // Set active version if exists
+      const active = data.find(v => v.active);
+      if (active) {
+        setActiveVersion(active);
+        setEditData(active);
+      } else if (data.length > 0) {
+        setActiveVersion(data[0]);
+        setEditData(data[0]);
+      }
+    } catch (error) {
+      console.error('Failed to load evaluation versions:', error);
+      // Set empty state
+      setVersions([]);
+    }
   };
 
   const handleCreateNewVersion = () => {
@@ -110,17 +87,20 @@ const EvaluationConfigurator = () => {
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      // TODO: Implement API call to POST /api/v1/evaluation-versions
-      console.log('Saving version:', editData);
-
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
+      if (editData.id && !editMode) {
+        // Update existing version
+        await evaluationVersionsApi.update(editData.id, editData);
+      } else {
+        // Create new version
+        await evaluationVersionsApi.create(editData);
+      }
 
       setHasChanges(false);
       setEditMode(false);
       await loadVersions();
     } catch (error) {
       console.error('Failed to save version:', error);
-      alert('Failed to save version');
+      alert('Failed to save version: ' + (error.message || 'Unknown error'));
     } finally {
       setIsSaving(false);
     }
@@ -143,8 +123,13 @@ const EvaluationConfigurator = () => {
   };
 
   const handleSetActive = async (versionId) => {
-    // TODO: Implement API call to PATCH /api/v1/evaluation-versions/{id}/activate
-    console.log('Setting active version:', versionId);
+    try {
+      await evaluationVersionsApi.activate(versionId);
+      await loadVersions();
+    } catch (error) {
+      console.error('Failed to activate version:', error);
+      alert('Failed to activate version: ' + (error.message || 'Unknown error'));
+    }
   };
 
   const dimensions = [

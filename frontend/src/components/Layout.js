@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate, Outlet } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import Breadcrumbs from './Breadcrumbs';
 
 /**
  * Navigation item configuration
@@ -295,6 +296,7 @@ const Layout = () => {
 
         {/* Page content */}
         <main className="p-6">
+          <Breadcrumbs />
           <Outlet />
         </main>
       </div>

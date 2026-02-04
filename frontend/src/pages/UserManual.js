@@ -52,18 +52,18 @@ const TableOfContents = ({ sections, activeSection, onSectionClick }) => {
  * Code Block Component for displaying code snippets
  */
 const CodeBlock = ({ code, language = 'json' }) => (
-  <div className="bg-gray-900 rounded-lg overflow-hidden my-4">
+  <div className="bg-gray-900 rounded-lg overflow-hidden my-4 max-w-full">
     <div className="flex items-center justify-between px-4 py-2 bg-gray-800">
       <span className="text-xs text-gray-400 uppercase">{language}</span>
       <button
         onClick={() => navigator.clipboard.writeText(code)}
-        className="text-xs text-gray-400 hover:text-white transition-colors"
+        className="text-xs text-gray-400 hover:text-white transition-colors flex-shrink-0"
       >
         Copy
       </button>
     </div>
-    <pre className="p-4 overflow-x-auto text-sm text-gray-300">
-      <code>{code}</code>
+    <pre className="p-4 overflow-x-auto text-xs md:text-sm text-gray-300 max-w-full">
+      <code className="break-words">{code}</code>
     </pre>
   </div>
 );
@@ -237,41 +237,40 @@ const UserManual = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="bg-gradient-to-r from-mash-600 to-mash-700 rounded-xl p-8 text-white mb-8">
-          <div className="flex items-center mb-4">
-            <svg className="w-10 h-10 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-            </svg>
-            <div>
-              <h1 className="text-3xl font-bold">CanonSafe&#8482; User Manual</h1>
-              <p className="text-mash-100 mt-1">Complete Guide to IP Protection & Character Evaluation</p>
-            </div>
+    <div>
+      {/* Header */}
+      <div className="bg-gradient-to-r from-mash-600 to-mash-700 rounded-xl p-6 md:p-8 text-white mb-6">
+        <div className="flex items-center mb-4">
+          <svg className="w-8 h-8 md:w-10 md:h-10 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+          </svg>
+          <div className="min-w-0">
+            <h1 className="text-2xl md:text-3xl font-bold truncate">CanonSafe&#8482; User Manual</h1>
+            <p className="text-mash-100 mt-1 text-sm md:text-base">Complete Guide to IP Protection & Character Evaluation</p>
           </div>
-          <div className="flex items-center text-sm text-mash-200">
-            <span>Version 1.0.0</span>
-            <span className="mx-3">|</span>
-            <span>Last Updated: February 2026</span>
+        </div>
+        <div className="flex items-center text-xs md:text-sm text-mash-200 flex-wrap">
+          <span>Version 1.0.0</span>
+          <span className="mx-2 md:mx-3">|</span>
+          <span>Last Updated: February 2026</span>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="flex flex-col lg:flex-row gap-6">
+        {/* Sidebar TOC */}
+        <div className="hidden lg:block w-64 flex-shrink-0">
+          <div className="bg-white rounded-xl shadow-sm p-4 sticky top-24 max-h-[calc(100vh-120px)] overflow-y-auto">
+            <TableOfContents
+              sections={sections}
+              activeSection={activeSection}
+              onSectionClick={handleSectionClick}
+            />
           </div>
         </div>
 
-        {/* Main Content */}
-        <div className="flex gap-8">
-          {/* Sidebar TOC */}
-          <div className="hidden lg:block w-64 flex-shrink-0">
-            <div className="bg-white rounded-xl shadow-sm p-6">
-              <TableOfContents
-                sections={sections}
-                activeSection={activeSection}
-                onSectionClick={handleSectionClick}
-              />
-            </div>
-          </div>
-
-          {/* Content */}
-          <div className="flex-1 bg-white rounded-xl shadow-sm p-8">
+        {/* Content */}
+        <div className="flex-1 min-w-0 bg-white rounded-xl shadow-sm p-6 md:p-8">
             {/* SECTION 1: Introduction */}
             <section className="mb-16">
               <SectionHeader
@@ -1443,7 +1442,6 @@ POST /api/v1/evaluations/evaluate
           </div>
         </div>
       </div>
-    </div>
   );
 };
 
