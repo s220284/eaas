@@ -307,17 +307,22 @@ const CharacterWorkspace = () => {
             <Tabs activeTab={activeTab} onChange={setActiveTab} />
 
             <div className="mt-6 space-y-6">
-              {activeTab === 'canon' && (
+              {editedData && activeTab === 'canon' && (
                 <CanonPackEditor data={editedData} onChange={updateField} />
               )}
-              {activeTab === 'voice' && (
+              {editedData && activeTab === 'voice' && (
                 <VoicePackEditor data={editedData} onChange={updateField} />
               )}
-              {activeTab === 'safety' && (
+              {editedData && activeTab === 'safety' && (
                 <SafetyPackEditor data={editedData} onChange={updateField} />
               )}
-              {activeTab === 'legal' && (
+              {editedData && activeTab === 'legal' && (
                 <LegalPackEditor data={editedData} onChange={updateField} />
+              )}
+              {!editedData && (
+                <div className="flex items-center justify-center p-12">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-mash-600"></div>
+                </div>
               )}
             </div>
           </div>
@@ -452,10 +457,15 @@ const CanonPackEditor = ({ data, onChange }) => {
   const [newFactValue, setNewFactValue] = useState('');
   const [newFactSource, setNewFactSource] = useState('');
 
+  // Ensure data exists
+  if (!data) {
+    return <div className="p-8 text-center text-gray-500">Loading...</div>;
+  }
+
   const addFact = () => {
     if (!newFactKey.trim()) return;
 
-    const facts = { ...data.canon_facts };
+    const facts = { ...(data.canon_facts || {}) };
     facts[newFactKey.trim()] = {
       value: newFactValue.trim(),
       source: newFactSource.trim(),
@@ -469,13 +479,13 @@ const CanonPackEditor = ({ data, onChange }) => {
   };
 
   const removeFact = (key) => {
-    const facts = { ...data.canon_facts };
+    const facts = { ...(data.canon_facts || {}) };
     delete facts[key];
     onChange('canon_facts', facts);
   };
 
   const updateFact = (key, field, value) => {
-    const facts = { ...data.canon_facts };
+    const facts = { ...(data.canon_facts || {}) };
     if (!facts[key]) facts[key] = {};
     if (typeof facts[key] === 'string') {
       // Convert old format to new format
@@ -765,22 +775,31 @@ const VoicePackEditor = ({ data, onChange }) => {
 // ============================================================================
 
 const SafetyPackEditor = ({ data, onChange }) => {
+  // Ensure data exists
+  if (!data) {
+    return <div className="p-8 text-center text-gray-500">Loading...</div>;
+  }
+
   const addTopic = (value) => {
     if (!value.trim()) return;
-    onChange('safety_prohibited_topics', [...(data.safety_prohibited_topics || []), value.trim()]);
+    const topics = Array.isArray(data.safety_prohibited_topics) ? data.safety_prohibited_topics : [];
+    onChange('safety_prohibited_topics', [...topics, value.trim()]);
   };
 
   const removeTopic = (index) => {
-    onChange('safety_prohibited_topics', (data.safety_prohibited_topics || []).filter((_, i) => i !== index));
+    const topics = Array.isArray(data.safety_prohibited_topics) ? data.safety_prohibited_topics : [];
+    onChange('safety_prohibited_topics', topics.filter((_, i) => i !== index));
   };
 
   const addDisclosure = (value) => {
     if (!value.trim()) return;
-    onChange('safety_required_disclosures', [...(data.safety_required_disclosures || []), value.trim()]);
+    const disclosures = Array.isArray(data.safety_required_disclosures) ? data.safety_required_disclosures : [];
+    onChange('safety_required_disclosures', [...disclosures, value.trim()]);
   };
 
   const removeDisclosure = (index) => {
-    onChange('safety_required_disclosures', (data.safety_required_disclosures || []).filter((_, i) => i !== index));
+    const disclosures = Array.isArray(data.safety_required_disclosures) ? data.safety_required_disclosures : [];
+    onChange('safety_required_disclosures', disclosures.filter((_, i) => i !== index));
   };
 
   return (
@@ -904,6 +923,11 @@ const SafetyPackEditor = ({ data, onChange }) => {
 // ============================================================================
 
 const LegalPackEditor = ({ data, onChange }) => {
+  // Ensure data exists
+  if (!data) {
+    return <div className="p-8 text-center text-gray-500">Loading...</div>;
+  }
+
   const updateRights = (field, value) => {
     onChange('legal_rights', { ...(data.legal_rights || {}), [field]: value });
   };
