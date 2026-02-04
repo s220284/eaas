@@ -38,12 +38,25 @@
    - Auto-deploys to Vercel on push
 
 ### Completed (Continued)
-6. ✅ **Relationships Restored** - Character relationships now displaying correctly
+6. ✅ **Relationships Restored & Enhanced** - Character relationships fully functional
    - ✅ Fixed data format mismatch between database and frontend
    - ✅ Database stored: {character_name, relationship_type, description}
    - ✅ Frontend expected: {entity, relationship}
    - ✅ Added transformation layer to support both formats
-   - ✅ Relationships now visible, editable, and clickable as before
+   - ✅ Relationships now visible, editable, and **clickable to navigate**
+   - ✅ Click any character name to jump to their workspace
+   - ✅ Search functionality with loading states
+   - ✅ Alerts if related character not found
+
+7. ✅ **Prohibited Topics Taxonomy System** - Professional tag management
+   - ✅ Created TaxonomyField component with autocomplete
+   - ✅ 22 common prohibited topics available
+   - ✅ Real-time search filtering as you type
+   - ✅ Quick-add buttons for popular topics
+   - ✅ Visual counter showing number of topics
+   - ✅ Prevents duplicate entries
+   - ✅ Dropdown suggestions with keyboard navigation (Enter/Escape)
+   - ✅ Professional tag styling with hover states
 
 ### Active Issues
 None - all critical features working!
