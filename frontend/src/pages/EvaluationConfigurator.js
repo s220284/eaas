@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { evaluationVersionsApi } from '../api/client';
+import Toast from '../components/Toast';
+import ConfirmModal from '../components/ConfirmModal';
 
 /**
  * Evaluation Configurator
@@ -27,6 +29,10 @@ const EvaluationConfigurator = () => {
   const [selectedDimension, setSelectedDimension] = useState('canon');
   const [hasChanges, setHasChanges] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+
+  // Toast and Modal state
+  const [toast, setToast] = useState(null);
+  const [confirmModal, setConfirmModal] = useState(null);
 
   // Editable state for current version
   const [editData, setEditData] = useState({
@@ -126,10 +132,165 @@ const EvaluationConfigurator = () => {
     try {
       await evaluationVersionsApi.activate(versionId);
       await loadVersions();
+      showToast('Version activated successfully', 'success');
     } catch (error) {
       console.error('Failed to activate version:', error);
-      alert('Failed to activate version: ' + (error.message || 'Unknown error'));
+      showToast('Failed to activate version: ' + (error.message || 'Unknown error'), 'error');
     }
+  };
+
+  const showToast = (message, type = 'success') => {
+    setToast({ message, type });
+  };
+
+  const handleDelete = (version) => {
+    setConfirmModal({
+      title: 'Delete Version?',
+      message: `Are you sure you want to delete "${version.version_name}"? This action cannot be undone.`,
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      type: 'danger',
+      onConfirm: async () => {
+        try {
+          await evaluationVersionsApi.delete(version.id);
+          await loadVersions();
+          showToast('Version deleted successfully', 'success');
+          if (activeVersion?.id === version.id) {
+            setActiveVersion(null);
+            setEditData({
+              version_name: '',
+              description: '',
+              canon_prompt_template: '',
+              voice_prompt_template: '',
+              safety_prompt_template: '',
+              legal_prompt_template: '',
+              scoring_criteria: {},
+              thresholds: { passing_score: 80, excellent_score: 95 },
+            });
+          }
+        } catch (error) {
+          console.error('Failed to delete version:', error);
+          showToast('Failed to delete version: ' + (error.message || 'Unknown error'), 'error');
+        }
+        setConfirmModal(null);
+      },
+      onCancel: () => setConfirmModal(null),
+    });
+  };
+
+  const handleDuplicate = async (version) => {
+    try {
+      const newName = prompt('Enter name for duplicated version:', `${version.version_name} (Copy)`);
+      if (!newName) return;
+
+      await evaluationVersionsApi.duplicate(version.id, newName);
+      await loadVersions();
+      showToast('Version duplicated successfully', 'success');
+    } catch (error) {
+      console.error('Failed to duplicate version:', error);
+      showToast('Failed to duplicate version: ' + (error.message || 'Unknown error'), 'error');
+    }
+  };
+
+  const handleImportJSON = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    input.onchange = (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        try {
+          const json = JSON.parse(event.target.result);
+          setEditData({
+            ...json,
+            version_name: json.version_name || `Imported ${new Date().toISOString().split('T')[0]}`,
+          });
+          setEditMode(true);
+          setHasChanges(true);
+          showToast('JSON imported successfully', 'success');
+        } catch (error) {
+          console.error('Failed to parse JSON:', error);
+          showToast('Invalid JSON file', 'error');
+        }
+      };
+      reader.readAsText(file);
+    };
+    input.click();
+  };
+
+  const updateScoringCriteria = (key, field, value) => {
+    setEditData(prev => ({
+      ...prev,
+      scoring_criteria: {
+        ...prev.scoring_criteria,
+        [key]: {
+          ...prev.scoring_criteria[key],
+          [field]: value,
+        },
+      },
+    }));
+    setHasChanges(true);
+  };
+
+  const addScoringCriteria = () => {
+    const key = prompt('Enter criteria key (e.g., canon_accuracy):');
+    if (!key || editData.scoring_criteria[key]) {
+      if (editData.scoring_criteria[key]) {
+        showToast('Criteria key already exists', 'error');
+      }
+      return;
+    }
+
+    setEditData(prev => ({
+      ...prev,
+      scoring_criteria: {
+        ...prev.scoring_criteria,
+        [key]: {
+          weight: 0.25,
+          description: 'New criteria description',
+        },
+      },
+    }));
+    setHasChanges(true);
+    showToast('Scoring criteria added', 'success');
+  };
+
+  const removeScoringCriteria = (key) => {
+    setConfirmModal({
+      title: 'Remove Criteria?',
+      message: `Remove "${key}" scoring criteria?`,
+      confirmText: 'Remove',
+      cancelText: 'Cancel',
+      type: 'warning',
+      onConfirm: () => {
+        setEditData(prev => {
+          const newCriteria = { ...prev.scoring_criteria };
+          delete newCriteria[key];
+          return {
+            ...prev,
+            scoring_criteria: newCriteria,
+          };
+        });
+        setHasChanges(true);
+        showToast('Scoring criteria removed', 'success');
+        setConfirmModal(null);
+      },
+      onCancel: () => setConfirmModal(null),
+    });
+  };
+
+  const updateThreshold = (key, value) => {
+    setEditData(prev => ({
+      ...prev,
+      thresholds: {
+        ...prev.thresholds,
+        [key]: parseInt(value) || 0,
+      },
+    }));
+    setHasChanges(true);
   };
 
   const dimensions = [
@@ -164,6 +325,14 @@ const EvaluationConfigurator = () => {
                   <span className="text-yellow-400 text-xs font-mono">UNSAVED</span>
                 </div>
               )}
+
+              <button
+                onClick={handleImportJSON}
+                className="px-4 py-2 bg-transparent border border-[#30363d] text-gray-400 hover:bg-[#21262d] hover:text-white transition-colors text-sm font-mono"
+                title="Import JSON configuration"
+              >
+                IMPORT JSON
+              </button>
 
               {editMode ? (
                 <>
@@ -217,38 +386,63 @@ const EvaluationConfigurator = () => {
 
               <div className="p-2 space-y-1">
                 {versions.map((version) => (
-                  <button
-                    key={version.id}
-                    onClick={() => {
-                      setActiveVersion(version);
-                      setEditData(version);
-                      setEditMode(false);
-                      setHasChanges(false);
-                    }}
-                    className={`w-full text-left px-3 py-3 rounded transition-colors ${
-                      activeVersion?.id === version.id
-                        ? 'bg-[#1f6feb] text-white'
-                        : 'text-gray-400 hover:bg-[#21262d] hover:text-gray-200'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs font-bold font-mono">
-                        v{version.version_number}
-                      </span>
-                      {version.active && (
-                        <span className="px-2 py-0.5 bg-green-600 text-white text-[10px] font-bold rounded">
-                          ACTIVE
+                  <div key={version.id} className="relative group">
+                    <button
+                      onClick={() => {
+                        setActiveVersion(version);
+                        setEditData(version);
+                        setEditMode(false);
+                        setHasChanges(false);
+                      }}
+                      className={`w-full text-left px-3 py-3 rounded transition-colors ${
+                        activeVersion?.id === version.id
+                          ? 'bg-[#1f6feb] text-white'
+                          : 'text-gray-400 hover:bg-[#21262d] hover:text-gray-200'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs font-bold font-mono">
+                          v{version.version_number}
                         </span>
-                      )}
+                        {version.active && (
+                          <span className="px-2 py-0.5 bg-green-600 text-white text-[10px] font-bold rounded">
+                            ACTIVE
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-[11px] text-gray-400 mb-2 truncate">
+                        {version.version_name}
+                      </div>
+                      <div className="flex items-center space-x-3 text-[10px]">
+                        <span className="text-gray-500">{version.total_uses} uses</span>
+                        <span className="text-yellow-500">★ {version.avg_accuracy_rating?.toFixed(1)}</span>
+                      </div>
+                    </button>
+
+                    {/* Action buttons */}
+                    <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex space-x-1">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDuplicate(version);
+                        }}
+                        className="p-1 bg-[#0d1117] border border-[#30363d] text-gray-400 hover:text-white hover:border-blue-500 rounded text-xs"
+                        title="Duplicate version"
+                      >
+                        ⎘
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDelete(version);
+                        }}
+                        className="p-1 bg-[#0d1117] border border-[#30363d] text-gray-400 hover:text-red-500 hover:border-red-500 rounded text-xs"
+                        title="Delete version"
+                      >
+                        ✕
+                      </button>
                     </div>
-                    <div className="text-[11px] text-gray-400 mb-2 truncate">
-                      {version.version_name}
-                    </div>
-                    <div className="flex items-center space-x-3 text-[10px]">
-                      <span className="text-gray-500">{version.total_uses} uses</span>
-                      <span className="text-yellow-500">★ {version.avg_accuracy_rating?.toFixed(1)}</span>
-                    </div>
-                  </button>
+                  </div>
                 ))}
               </div>
             </div>
@@ -431,24 +625,67 @@ const EvaluationConfigurator = () => {
 
             {/* Scoring Criteria */}
             <div className="bg-[#161b22] border border-[#30363d] rounded-lg p-6">
-              <h2 className="text-sm font-bold text-white uppercase tracking-wider mb-4 border-b border-[#30363d] pb-3">
-                SCORING CRITERIA & WEIGHTS
-              </h2>
+              <div className="flex items-center justify-between mb-4 border-b border-[#30363d] pb-3">
+                <h2 className="text-sm font-bold text-white uppercase tracking-wider">
+                  SCORING CRITERIA & WEIGHTS
+                </h2>
+                {editMode && (
+                  <button
+                    onClick={addScoringCriteria}
+                    className="px-3 py-1 bg-[#238636] border border-[#2ea043] text-white hover:bg-[#2ea043] transition-colors text-xs font-mono rounded"
+                  >
+                    + ADD CRITERIA
+                  </button>
+                )}
+              </div>
 
               <div className="grid grid-cols-2 gap-6">
                 {Object.entries(editData.scoring_criteria || {}).map(([key, criteria]) => (
-                  <div key={key} className="bg-[#0d1117] border border-[#30363d] p-4 rounded">
-                    <div className="flex items-center justify-between mb-2">
+                  <div key={key} className="bg-[#0d1117] border border-[#30363d] p-4 rounded relative group">
+                    <div className="flex items-center justify-between mb-3">
                       <h3 className="text-xs font-bold text-white uppercase tracking-wider">
                         {key.replace(/_/g, ' ')}
                       </h3>
-                      <span className="text-lg font-bold text-[#58a6ff] font-mono">
-                        {(criteria.weight * 100).toFixed(0)}%
-                      </span>
+                      {editMode ? (
+                        <div className="flex items-center space-x-2">
+                          <input
+                            type="number"
+                            min="0"
+                            max="100"
+                            value={(criteria.weight * 100).toFixed(0)}
+                            onChange={(e) => updateScoringCriteria(key, 'weight', parseFloat(e.target.value) / 100)}
+                            className="w-16 bg-[#0d1117] border border-[#30363d] px-2 py-1 text-sm text-[#58a6ff] font-mono rounded focus:border-[#58a6ff] focus:outline-none text-right"
+                          />
+                          <span className="text-sm text-[#58a6ff] font-mono">%</span>
+                        </div>
+                      ) : (
+                        <span className="text-lg font-bold text-[#58a6ff] font-mono">
+                          {(criteria.weight * 100).toFixed(0)}%
+                        </span>
+                      )}
                     </div>
-                    <p className="text-xs text-gray-400 leading-relaxed">
-                      {criteria.description}
-                    </p>
+                    {editMode ? (
+                      <textarea
+                        value={criteria.description}
+                        onChange={(e) => updateScoringCriteria(key, 'description', e.target.value)}
+                        rows={3}
+                        className="w-full bg-[#0d1117] border border-[#30363d] px-2 py-1 text-xs text-gray-300 font-mono rounded focus:border-[#58a6ff] focus:outline-none resize-none"
+                      />
+                    ) : (
+                      <p className="text-xs text-gray-400 leading-relaxed">
+                        {criteria.description}
+                      </p>
+                    )}
+
+                    {editMode && (
+                      <button
+                        onClick={() => removeScoringCriteria(key)}
+                        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity p-1 bg-[#0d1117] border border-[#30363d] text-gray-400 hover:text-red-500 hover:border-red-500 rounded text-xs"
+                        title="Remove criteria"
+                      >
+                        ✕
+                      </button>
+                    )}
                   </div>
                 ))}
               </div>
@@ -460,20 +697,42 @@ const EvaluationConfigurator = () => {
                 </h3>
                 <div className="grid grid-cols-2 gap-6">
                   <div className="bg-[#0d1117] border border-yellow-900/30 p-4 rounded">
-                    <div className="text-xs text-yellow-500 uppercase tracking-wider mb-1">
+                    <div className="text-xs text-yellow-500 uppercase tracking-wider mb-2">
                       Passing Score
                     </div>
-                    <div className="text-3xl font-bold text-white font-mono">
-                      {editData.thresholds?.passing_score || 80}
-                    </div>
+                    {editMode ? (
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={editData.thresholds?.passing_score || 80}
+                        onChange={(e) => updateThreshold('passing_score', e.target.value)}
+                        className="w-full bg-[#0d1117] border border-yellow-900/50 px-3 py-2 text-3xl text-white font-mono rounded focus:border-yellow-500 focus:outline-none"
+                      />
+                    ) : (
+                      <div className="text-3xl font-bold text-white font-mono">
+                        {editData.thresholds?.passing_score || 80}
+                      </div>
+                    )}
                   </div>
                   <div className="bg-[#0d1117] border border-green-900/30 p-4 rounded">
-                    <div className="text-xs text-green-500 uppercase tracking-wider mb-1">
+                    <div className="text-xs text-green-500 uppercase tracking-wider mb-2">
                       Excellent Score
                     </div>
-                    <div className="text-3xl font-bold text-white font-mono">
-                      {editData.thresholds?.excellent_score || 95}
-                    </div>
+                    {editMode ? (
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={editData.thresholds?.excellent_score || 95}
+                        onChange={(e) => updateThreshold('excellent_score', e.target.value)}
+                        className="w-full bg-[#0d1117] border border-green-900/50 px-3 py-2 text-3xl text-white font-mono rounded focus:border-green-500 focus:outline-none"
+                      />
+                    ) : (
+                      <div className="text-3xl font-bold text-white font-mono">
+                        {editData.thresholds?.excellent_score || 95}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -509,6 +768,29 @@ const EvaluationConfigurator = () => {
           </div>
         </div>
       </div>
+
+      {/* Toast Notifications */}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
+
+      {/* Confirmation Modal */}
+      {confirmModal && (
+        <ConfirmModal
+          isOpen={true}
+          title={confirmModal.title}
+          message={confirmModal.message}
+          confirmText={confirmModal.confirmText}
+          cancelText={confirmModal.cancelText}
+          type={confirmModal.type}
+          onConfirm={confirmModal.onConfirm}
+          onCancel={confirmModal.onCancel}
+        />
+      )}
     </div>
   );
 };
