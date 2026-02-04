@@ -37,8 +37,16 @@
    - GitHub repo: https://github.com/s220284/eaas.git
    - Auto-deploys to Vercel on push
 
+### Completed (Continued)
+6. ✅ **Relationships Restored** - Character relationships now displaying correctly
+   - ✅ Fixed data format mismatch between database and frontend
+   - ✅ Database stored: {character_name, relationship_type, description}
+   - ✅ Frontend expected: {entity, relationship}
+   - ✅ Added transformation layer to support both formats
+   - ✅ Relationships now visible, editable, and clickable as before
+
 ### Active Issues
-1. 🔧 Relationships missing data on character pages - needs fix
+None - all critical features working!
 
 ### Key Learnings
 - ALWAYS work in CLOUD ONLY (no local confusion)
