@@ -101,11 +101,29 @@ const CharacterWorkspace = () => {
   }, [fetchData]);
 
   // Transform version data to editable format
-  const transformVersionToEditData = (version) => ({
+  const transformVersionToEditData = (version) => {
+    // Transform relationships to support both old and new formats
+    let relationships = version.canon_relationships || [];
+    if (Array.isArray(relationships)) {
+      relationships = relationships.map(rel => {
+        // Handle both formats:
+        // Old: {character_name, relationship_type, description}
+        // New: {entity, relationship}
+        if (rel.character_name) {
+          return {
+            entity: rel.character_name,
+            relationship: rel.description || rel.relationship_type || ''
+          };
+        }
+        return rel;
+      });
+    }
+
+    return {
     // Canon Pack
     canon_facts: version.canon_facts || {},
     canon_voice: version.canon_voice || {},
-    canon_relationships: version.canon_relationships || [],
+    canon_relationships: relationships,
     // Legal Pack
     legal_rights: version.legal_rights || {},
     legal_performer_consent: version.legal_performer_consent || {},
@@ -114,7 +132,8 @@ const CharacterWorkspace = () => {
     safety_prohibited_topics: version.safety_prohibited_topics || [],
     safety_required_disclosures: version.safety_required_disclosures || [],
     safety_age_gating: version.safety_age_gating || {},
-  });
+  };
+};
 
   // Handle field changes
   const updateField = (path, value) => {
