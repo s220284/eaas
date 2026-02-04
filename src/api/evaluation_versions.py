@@ -226,10 +226,15 @@ async def delete_evaluation_version(
     return {"message": "Evaluation version deleted successfully"}
 
 
+from pydantic import BaseModel
+
+class DuplicateRequest(BaseModel):
+    new_name: Optional[str] = None
+
 @router.post("/{version_id}/duplicate", response_model=EvaluationVersionResponse)
 async def duplicate_evaluation_version(
     version_id: str,
-    new_name: Optional[str] = None,
+    request: DuplicateRequest,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -238,6 +243,7 @@ async def duplicate_evaluation_version(
 
     Useful for iterating on existing prompts.
     """
+    new_name = request.new_name
     # Get source version
     source_version = db.query(EvaluationVersion).filter(
         EvaluationVersion.id == version_id,

@@ -9,7 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from src.config import get_settings
 from src.database import engine, Base
-from src.api import auth, characters, evaluations, organizations, data_quality, test_suites, evaluation_versions
+from src.api import auth, characters, evaluations, organizations, data_quality, test_suites, evaluation_versions, taxonomy
 
 settings = get_settings()
 
@@ -40,6 +40,7 @@ app.include_router(characters.router, prefix="/api/v1/characters", tags=["charac
 app.include_router(test_suites.router, prefix="/api/v1/test-suites", tags=["test-suites"])
 app.include_router(evaluations.router, prefix="/api/v1/evaluations", tags=["evaluations"])
 app.include_router(evaluation_versions.router, prefix="/api/v1/evaluation-versions", tags=["evaluation-versions"])
+app.include_router(taxonomy.router, prefix="/api/v1/taxonomy", tags=["taxonomy"])
 app.include_router(data_quality.router, prefix="/api/v1/data-quality", tags=["data-quality"])
 
 
