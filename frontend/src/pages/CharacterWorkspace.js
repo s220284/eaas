@@ -42,8 +42,27 @@ const CharacterWorkspace = () => {
       setVersions(versionsData || []);
       setEvaluations(Array.isArray(evalsData) ? evalsData : []);
 
-      // Set current version or latest
-      const currentVer = versionsData.find((v) => v.id === charData.current_version_id) || versionsData[0];
+      // Set current version or latest, or create a default empty version
+      let currentVer = versionsData?.find((v) => v.id === charData.current_version_id) || versionsData?.[0];
+
+      // If no versions exist, create a default empty version from character data
+      if (!currentVer && charData) {
+        currentVer = {
+          id: 'new',
+          version_number: 1,
+          canon_facts: {},
+          canon_voice: {},
+          canon_relationships: [],
+          legal_rights: {},
+          legal_performer_consent: {},
+          safety_content_rating: 'PG',
+          safety_prohibited_topics: [],
+          safety_required_disclosures: [],
+          safety_age_gating: { enabled: false },
+          created_at: new Date().toISOString(),
+        };
+      }
+
       if (currentVer) {
         setSelectedVersion(currentVer);
         setEditedData(transformVersionToEditData(currentVer));
@@ -136,11 +155,28 @@ const CharacterWorkspace = () => {
     );
   }
 
-  if (!character || !selectedVersion) {
+  if (!character) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <p className="text-gray-600">Character not found</p>
+          <button
+            onClick={() => navigate('/characters')}
+            className="mt-4 text-mash-600 hover:text-mash-700"
+          >
+            ← Back to Characters
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // If still no selected version after loading, show error
+  if (!isLoading && !selectedVersion) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <p className="text-gray-600">Unable to load character data</p>
           <button
             onClick={() => navigate('/characters')}
             className="mt-4 text-mash-600 hover:text-mash-700"

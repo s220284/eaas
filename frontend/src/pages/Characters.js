@@ -1031,21 +1031,32 @@ const CharacterList = ({ characters, isLoading, onSelect, onCreate }) => {
                   </p>
                 </div>
               </div>
-              <div className="mt-4 flex items-center justify-between">
-                <span
-                  className={`px-2 py-1 text-xs font-medium rounded-full ${
-                    character.status === 'approved'
-                      ? 'bg-green-100 text-green-800'
-                      : character.status === 'draft'
-                      ? 'bg-gray-100 text-gray-800'
-                      : 'bg-yellow-100 text-yellow-800'
-                  }`}
+              <div className="mt-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span
+                    className={`px-2 py-1 text-xs font-medium rounded-full ${
+                      character.status === 'approved'
+                        ? 'bg-green-100 text-green-800'
+                        : character.status === 'draft'
+                        ? 'bg-gray-100 text-gray-800'
+                        : 'bg-yellow-100 text-yellow-800'
+                    }`}
+                  >
+                    {character.status || 'draft'}
+                  </span>
+                  <span className="text-xs text-gray-400">
+                    v{character.version || 1}
+                  </span>
+                </div>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onSelect(character);
+                  }}
+                  className="w-full px-3 py-2 bg-mash-600 text-white text-sm font-medium rounded-lg hover:bg-mash-700 transition-colors"
                 >
-                  {character.status || 'draft'}
-                </span>
-                <span className="text-xs text-gray-400">
-                  v{character.version || 1}
-                </span>
+                  Open Workspace →
+                </button>
               </div>
             </div>
           ))}
