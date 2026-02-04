@@ -22,6 +22,30 @@ export default function DataQualityDashboard() {
     max_score: null,
   });
 
+  // Global handler for metric clicks
+  useEffect(() => {
+    window.handleDataQualityFilter = (filterType) => {
+      setActiveTab('characters');
+      switch (filterType) {
+        case 'needs_attention':
+          setFilters(prev => ({ ...prev, needs_review: true }));
+          break;
+        case 'incomplete':
+          // Filter for characters with missing data - we can use status or custom logic
+          setFilters(prev => ({ ...prev, status: 'draft' }));
+          break;
+        case 'total':
+          resetFilters();
+          break;
+        default:
+          break;
+      }
+    };
+    return () => {
+      delete window.handleDataQualityFilter;
+    };
+  }, []);
+
   // Memoize fetch functions to prevent infinite loops
   const fetchOverview = useCallback(() => dataQualityApi.getOverview(), []);
   const fetchCharacters = useCallback(() => dataQualityApi.getCharacters(filters), [filters]);
@@ -131,7 +155,20 @@ export default function DataQualityDashboard() {
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {activeTab === 'overview' && (
-          <OverviewTab overview={overview} isLoading={overviewLoading} />
+          <OverviewTab
+            overview={overview}
+            isLoading={overviewLoading}
+            onMetricClick={(filterType) => {
+              setActiveTab('characters');
+              if (filterType === 'needs_attention') {
+                setFilters(prev => ({ ...prev, needs_review: true }));
+              } else if (filterType === 'incomplete') {
+                setFilters(prev => ({ ...prev, status: 'draft' }));
+              } else if (filterType === 'total') {
+                resetFilters();
+              }
+            }}
+          />
         )}
 
         {activeTab === 'characters' && (
@@ -157,7 +194,7 @@ export default function DataQualityDashboard() {
 // Overview Tab
 // ============================================================================
 
-function OverviewTab({ overview, isLoading }) {
+function OverviewTab({ overview, isLoading, onMetricClick }) {
   if (isLoading) {
     return <LoadingState />;
   }
@@ -172,20 +209,28 @@ function OverviewTab({ overview, isLoading }) {
     <div className="space-y-6">
       {/* Alert for characters needing attention */}
       {summary.needs_attention > 0 && (
-        <div className="bg-amber-50 border-l-4 border-amber-400 p-4 rounded-r-lg shadow-sm">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <svg className="h-5 w-5 text-amber-400" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-              </svg>
+        <button
+          onClick={() => onMetricClick('needs_attention')}
+          className="w-full bg-amber-50 border-l-4 border-amber-400 p-4 rounded-r-lg shadow-sm hover:bg-amber-100 transition-colors cursor-pointer text-left"
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-amber-400" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <p className="text-sm text-amber-800 font-medium">
+                  {summary.needs_attention} character{summary.needs_attention !== 1 ? 's' : ''} need{summary.needs_attention === 1 ? 's' : ''} attention
+                </p>
+              </div>
             </div>
-            <div className="ml-3">
-              <p className="text-sm text-amber-800 font-medium">
-                {summary.needs_attention} character{summary.needs_attention !== 1 ? 's' : ''} need{summary.needs_attention === 1 ? 's' : ''} attention
-              </p>
+            <div className="text-amber-600 text-sm font-medium flex items-center">
+              View characters →
             </div>
           </div>
-        </div>
+        </button>
       )}
 
       {/* Stats Grid */}
@@ -194,8 +239,10 @@ function OverviewTab({ overview, isLoading }) {
         <MetricCard
           title="Total Characters"
           value={summary.total_characters}
-          subtitle="Across all franchises"
+          subtitle="Click to view all"
           color="indigo"
+          onClick={() => onMetricClick('total')}
+          clickable
           icon={
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
@@ -220,8 +267,10 @@ function OverviewTab({ overview, isLoading }) {
         <MetricCard
           title="Incomplete"
           value={summary.incomplete_characters}
-          subtitle="Missing version data"
+          subtitle="Click to view these characters"
           color="amber"
+          onClick={() => onMetricClick('incomplete')}
+          clickable
           icon={
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -233,8 +282,10 @@ function OverviewTab({ overview, isLoading }) {
         <MetricCard
           title="Needs Attention"
           value={summary.needs_attention}
-          subtitle="Requires review"
+          subtitle="Click to view these characters"
           color="red"
+          onClick={() => onMetricClick('needs_attention')}
+          clickable
           icon={
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
@@ -510,7 +561,7 @@ function IssuesTab({ issuesData, isLoading }) {
 // Reusable Components
 // ============================================================================
 
-function MetricCard({ title, value, subtitle, color, icon }) {
+function MetricCard({ title, value, subtitle, color, icon, onClick, clickable }) {
   const colorClasses = {
     indigo: 'from-indigo-500 to-indigo-600',
     green: 'from-green-500 to-green-600',
@@ -522,18 +573,42 @@ function MetricCard({ title, value, subtitle, color, icon }) {
     blue: 'from-blue-500 to-blue-600',
   };
 
-  return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
+  const baseClasses = "bg-white rounded-xl shadow-sm border border-gray-200 p-6 transition-all";
+  const interactiveClasses = clickable
+    ? "hover:shadow-lg hover:scale-105 cursor-pointer hover:border-indigo-300"
+    : "hover:shadow-md";
+
+  const CardContent = () => (
+    <>
       <div className="flex items-center justify-between mb-4">
         <div className={`w-12 h-12 bg-gradient-to-br ${colorClasses[color]} rounded-lg flex items-center justify-center shadow-sm`}>
           <div className="text-white">{icon}</div>
         </div>
+        {clickable && (
+          <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        )}
       </div>
       <div>
         <p className="text-3xl font-bold text-gray-900" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>{value}</p>
         <p className="text-sm font-medium text-gray-700 mt-1">{title}</p>
-        <p className="text-xs text-gray-500 mt-1">{subtitle}</p>
+        <p className={`text-xs mt-1 ${clickable ? 'text-indigo-600 font-medium' : 'text-gray-500'}`}>{subtitle}</p>
       </div>
+    </>
+  );
+
+  if (clickable && onClick) {
+    return (
+      <button onClick={onClick} className={`${baseClasses} ${interactiveClasses} text-left w-full`}>
+        <CardContent />
+      </button>
+    );
+  }
+
+  return (
+    <div className={`${baseClasses} ${interactiveClasses}`}>
+      <CardContent />
     </div>
   );
 }
@@ -670,9 +745,17 @@ function CharacterRow({ character }) {
         )}
       </td>
       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-        <Link to={`/characters/${character.id}`} className="text-indigo-600 hover:text-indigo-900">
-          View
-        </Link>
+        <div className="flex items-center justify-end space-x-3">
+          <Link to={`/characters/${character.id}`} className="text-indigo-600 hover:text-indigo-900">
+            View
+          </Link>
+          <Link
+            to={`/characters/${character.id}/workspace`}
+            className="px-3 py-1 bg-indigo-600 text-white text-xs rounded hover:bg-indigo-700 transition-colors"
+          >
+            Edit →
+          </Link>
+        </div>
       </td>
     </tr>
   );
