@@ -32,23 +32,44 @@ const CharacterWorkspace = () => {
   const fetchData = useCallback(async () => {
     setIsLoading(true);
     try {
-      const [charData, versionsData, evalsData] = await Promise.all([
-        charactersApi.getById(id),
-        charactersApi.getVersions(id),
-        evaluationsApi.getAll({ character_card_id: id }),
-      ]);
+      console.log('Fetching character data for ID:', id);
+
+      const charData = await charactersApi.getById(id);
+      console.log('Character data:', charData);
+
+      let versionsData = [];
+      try {
+        versionsData = await charactersApi.getVersions(id);
+        console.log('Versions data:', versionsData);
+      } catch (versionError) {
+        console.error('Failed to load versions:', versionError);
+        // Continue even if versions fail to load
+      }
+
+      let evalsData = [];
+      try {
+        evalsData = await evaluationsApi.getAll({ character_card_id: id });
+        console.log('Evaluations data:', evalsData);
+      } catch (evalError) {
+        console.error('Failed to load evaluations:', evalError);
+        // Continue even if evaluations fail to load
+      }
 
       setCharacter(charData);
       setVersions(versionsData || []);
       setEvaluations(Array.isArray(evalsData) ? evalsData : []);
 
-      // Set current version or latest, or create a default empty version
-      let currentVer = versionsData?.find((v) => v.id === charData.current_version_id) || versionsData?.[0];
+      // Use character's current_version if available, otherwise use versions list, or create default
+      let currentVer = charData.current_version ||
+                       versionsData?.find((v) => v.id === charData.current_version_id) ||
+                       versionsData?.[0];
 
-      // If no versions exist, create a default empty version from character data
-      if (!currentVer && charData) {
+      // If still no version, create a default empty version structure
+      if (!currentVer) {
+        console.log('Creating default version structure');
         currentVer = {
           id: 'new',
+          character_card_id: charData.id,
           version_number: 1,
           canon_facts: {},
           canon_voice: {},
@@ -59,14 +80,14 @@ const CharacterWorkspace = () => {
           safety_prohibited_topics: [],
           safety_required_disclosures: [],
           safety_age_gating: { enabled: false },
+          change_summary: 'Initial version',
           created_at: new Date().toISOString(),
         };
       }
 
-      if (currentVer) {
-        setSelectedVersion(currentVer);
-        setEditedData(transformVersionToEditData(currentVer));
-      }
+      console.log('Setting version:', currentVer);
+      setSelectedVersion(currentVer);
+      setEditedData(transformVersionToEditData(currentVer));
     } catch (error) {
       console.error('Failed to load character:', error);
     } finally {
@@ -171,19 +192,43 @@ const CharacterWorkspace = () => {
     );
   }
 
-  // If still no selected version after loading, show error
-  if (!isLoading && !selectedVersion) {
+  // If still no selected version after loading, show error with debug info
+  if (!isLoading && !selectedVersion && character) {
+    console.error('Character loaded but no version available:', { character, selectedVersion, editedData });
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+        <div className="text-center p-8 bg-white rounded-lg shadow-md max-w-md">
+          <div className="text-6xl mb-4">⚠️</div>
+          <h2 className="text-xl font-bold text-gray-900 mb-2">Unable to Load Workspace</h2>
+          <p className="text-gray-600 mb-4">
+            Character data is incomplete. Please try creating a new character or contact support.
+          </p>
+          <div className="space-y-2">
+            <button
+              onClick={() => navigate('/characters')}
+              className="w-full px-4 py-2 bg-mash-600 text-white rounded-lg hover:bg-mash-700"
+            >
+              ← Back to Characters
+            </button>
+            <button
+              onClick={() => window.location.reload()}
+              className="w-full px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
+            >
+              Reload Page
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Ensure we have editedData before rendering workspace
+  if (!isLoading && character && selectedVersion && !editedData) {
+    console.log('Initializing editedData from selectedVersion');
+    setEditedData(transformVersionToEditData(selectedVersion));
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <p className="text-gray-600">Unable to load character data</p>
-          <button
-            onClick={() => navigate('/characters')}
-            className="mt-4 text-mash-600 hover:text-mash-700"
-          >
-            ← Back to Characters
-          </button>
-        </div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-mash-600"></div>
       </div>
     );
   }
