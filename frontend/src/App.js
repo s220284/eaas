@@ -13,6 +13,7 @@ import TestSuites from './pages/TestSuites';
 import Evaluations from './pages/Evaluations';
 import EvaluationConfigurator from './pages/EvaluationConfigurator';
 import DataQualityDashboard from './pages/DataQualityDashboard';
+import Taxonomy from './pages/Taxonomy';
 import Settings from './pages/Settings';
 import UserManual from './pages/UserManual';
 import Layout from './components/Layout';
@@ -102,6 +103,7 @@ function App() {
             <Route path="/evaluations" element={<Evaluations />} />
             <Route path="/evaluations/configure" element={<EvaluationConfigurator />} />
             <Route path="/data-quality" element={<DataQualityDashboard />} />
+            <Route path="/taxonomy" element={<Taxonomy />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/user-manual" element={<UserManual />} />
           </Route>
