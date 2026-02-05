@@ -353,16 +353,12 @@ async def initialize_taxonomy(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Initialize default taxonomy. Only run once per organization."""
-    existing = db.query(TaxonomyCategory).filter(
+    """Initialize default taxonomy. Idempotent - creates only missing categories."""
+    # Get existing category keys
+    existing_cats = db.query(TaxonomyCategory.key).filter(
         TaxonomyCategory.organization_id == str(current_user.organization_id)
-    ).first()
-
-    if existing:
-        count = db.query(TaxonomyCategory).filter(
-            TaxonomyCategory.organization_id == str(current_user.organization_id)
-        ).count()
-        return {"message": "Taxonomy already initialized", "categories_count": count}
+    ).all()
+    existing_keys = {cat.key for cat in existing_cats}
 
     DEFAULT_TAXONOMY = {
         "prohibited_content": {
@@ -404,13 +400,17 @@ async def initialize_taxonomy(
 
     created_categories = []
     for key, cat_data in DEFAULT_TAXONOMY.items():
+        # Skip if category already exists
+        if key in existing_keys:
+            continue
+
         category = TaxonomyCategory(
             organization_id=str(current_user.organization_id),
             key=key,
             name=cat_data["name"],
             icon=cat_data["icon"],
             color=cat_data["color"],
-            display_order=len(created_categories),
+            display_order=len(existing_keys) + len(created_categories),
             system_managed=True,
             active=True,
             created_by=str(current_user.id),
@@ -434,4 +434,16 @@ async def initialize_taxonomy(
         created_categories.append(category)
 
     db.commit()
-    return {"message": "Taxonomy initialized", "categories_count": len(created_categories)}
+
+    total_count = len(existing_keys) + len(created_categories)
+    if created_categories:
+        return {
+            "message": f"Created {len(created_categories)} new categories",
+            "created": [c.name for c in created_categories],
+            "total_categories": total_count
+        }
+    else:
+        return {
+            "message": "All categories already exist",
+            "total_categories": total_count
+        }
