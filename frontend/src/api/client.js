@@ -444,4 +444,104 @@ export const dashboardApi = {
   },
 };
 
+// ============================================================================
+// Taxonomy API
+// ============================================================================
+
+export const taxonomyApi = {
+  /**
+   * Get all taxonomy categories with their tags
+   */
+  getCategories: async (activeOnly = false) => {
+    const response = await apiClient.get('/api/v1/taxonomy/categories', {
+      params: { active_only: activeOnly },
+    });
+    return response.data;
+  },
+
+  /**
+   * Get a specific category
+   */
+  getCategory: async (categoryId) => {
+    const response = await apiClient.get(`/api/v1/taxonomy/categories/${categoryId}`);
+    return response.data;
+  },
+
+  /**
+   * Create a new category
+   */
+  createCategory: async (data) => {
+    const response = await apiClient.post('/api/v1/taxonomy/categories', data);
+    return response.data;
+  },
+
+  /**
+   * Update a category
+   */
+  updateCategory: async (categoryId, data) => {
+    const response = await apiClient.patch(`/api/v1/taxonomy/categories/${categoryId}`, data);
+    return response.data;
+  },
+
+  /**
+   * Delete a category
+   */
+  deleteCategory: async (categoryId) => {
+    const response = await apiClient.delete(`/api/v1/taxonomy/categories/${categoryId}`);
+    return response.data;
+  },
+
+  /**
+   * Get tags for a category
+   */
+  getTags: async (categoryId, activeOnly = false) => {
+    const response = await apiClient.get(`/api/v1/taxonomy/categories/${categoryId}/tags`, {
+      params: { active_only: activeOnly },
+    });
+    return response.data;
+  },
+
+  /**
+   * Create a new tag
+   */
+  createTag: async (categoryId, data) => {
+    const response = await apiClient.post(`/api/v1/taxonomy/categories/${categoryId}/tags`, data);
+    return response.data;
+  },
+
+  /**
+   * Update a tag
+   */
+  updateTag: async (tagId, data) => {
+    const response = await apiClient.patch(`/api/v1/taxonomy/tags/${tagId}`, data);
+    return response.data;
+  },
+
+  /**
+   * Delete a tag
+   */
+  deleteTag: async (tagId) => {
+    const response = await apiClient.delete(`/api/v1/taxonomy/tags/${tagId}`);
+    return response.data;
+  },
+
+  /**
+   * Export full taxonomy
+   */
+  export: async () => {
+    const response = await apiClient.get('/api/v1/taxonomy/export');
+    return response.data;
+  },
+
+  /**
+   * Search tags (for autocomplete)
+   */
+  searchTags: async (query, categoryKey = null) => {
+    const response = await apiClient.get('/api/v1/taxonomy/search', {
+      params: { q: query, category_key: categoryKey },
+    });
+    return response.data;
+  },
+};
+
 export default apiClient;

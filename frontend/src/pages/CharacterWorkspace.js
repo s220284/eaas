@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { charactersApi, evaluationsApi } from '../api/client';
+import { charactersApi, evaluationsApi, taxonomyApi } from '../api/client';
 import ErrorBoundary from '../components/ErrorBoundary';
 
 /**
@@ -28,6 +28,55 @@ const CharacterWorkspace = () => {
   const [activeTab, setActiveTab] = useState('canon');
   const [editedData, setEditedData] = useState(null);
   const [hasChanges, setHasChanges] = useState(false);
+  const [taxonomy, setTaxonomy] = useState({
+    prohibitedContent: [],
+    characterTraits: [],
+    contentRatings: [],
+    relationshipTypes: [],
+  });
+
+  // Load taxonomy data from backend
+  const loadTaxonomy = useCallback(async () => {
+    try {
+      const categories = await taxonomyApi.getCategories(true); // Only active categories
+      const taxonomyData = {
+        prohibitedContent: [],
+        characterTraits: [],
+        contentRatings: [],
+        relationshipTypes: [],
+      };
+
+      categories.forEach(category => {
+        if (category.key === 'prohibited_content') {
+          taxonomyData.prohibitedContent = category.tags.map(tag => ({
+            name: tag.name,
+            description: tag.description,
+            severity: tag.severity,
+          }));
+        } else if (category.key === 'character_traits') {
+          taxonomyData.characterTraits = category.tags.map(tag => ({
+            name: tag.name,
+            description: tag.description,
+          }));
+        } else if (category.key === 'content_rating') {
+          taxonomyData.contentRatings = category.tags.map(tag => ({
+            name: tag.name,
+            description: tag.description,
+          }));
+        } else if (category.key === 'relationship_types') {
+          taxonomyData.relationshipTypes = category.tags.map(tag => ({
+            name: tag.name,
+            description: tag.description,
+          }));
+        }
+      });
+
+      setTaxonomy(taxonomyData);
+    } catch (error) {
+      console.error('Failed to load taxonomy:', error);
+      // Continue with empty taxonomy if load fails
+    }
+  }, []);
 
   // Fetch character and related data
   const fetchData = useCallback(async () => {
@@ -99,6 +148,10 @@ const CharacterWorkspace = () => {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  useEffect(() => {
+    loadTaxonomy();
+  }, [loadTaxonomy]);
 
   // Transform version data to editable format
   const transformVersionToEditData = (version) => {
@@ -329,7 +382,7 @@ const CharacterWorkspace = () => {
 
             <div className="mt-6 space-y-6">
               {editedData && activeTab === 'canon' && (
-                <CanonPackEditor data={editedData} onChange={updateField} />
+                <CanonPackEditor data={editedData} onChange={updateField} taxonomy={taxonomy} />
               )}
               {editedData && activeTab === 'voice' && (
                 <VoicePackEditor data={editedData} onChange={updateField} />
@@ -474,7 +527,7 @@ const Tabs = ({ activeTab, onChange }) => {
 // Canon Pack Editor
 // ============================================================================
 
-const CanonPackEditor = ({ data, onChange }) => {
+const CanonPackEditor = ({ data, onChange, taxonomy = { prohibitedContent: [], characterTraits: [], contentRatings: [], relationshipTypes: [] } }) => {
   const [newFactKey, setNewFactKey] = useState('');
   const [newFactValue, setNewFactValue] = useState('');
   const [newFactSource, setNewFactSource] = useState('');
@@ -608,19 +661,21 @@ const CanonPackEditor = ({ data, onChange }) => {
       <RelationshipsEditor
         relationships={data.canon_relationships || []}
         onChange={(rels) => onChange('canon_relationships', rels)}
+        relationshipTypes={taxonomy.relationshipTypes}
       />
 
       {/* Voice Profile Section */}
       <VoiceProfileSection
         voice={data.canon_voice || {}}
         onChange={(voice) => onChange('canon_voice', voice)}
+        characterTraits={taxonomy.characterTraits}
       />
     </div>
   );
 };
 
 // Relationships Editor Component
-const RelationshipsEditor = ({ relationships, onChange }) => {
+const RelationshipsEditor = ({ relationships, onChange, relationshipTypes = [] }) => {
   const navigate = useNavigate();
   const [newEntity, setNewEntity] = useState('');
   const [newRelType, setNewRelType] = useState('');
@@ -716,9 +771,19 @@ const RelationshipsEditor = ({ relationships, onChange }) => {
           type="text"
           value={newRelType}
           onChange={(e) => setNewRelType(e.target.value)}
+          list="relationship-types"
           className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
-          placeholder="Relationship type"
+          placeholder="Relationship type (e.g., family, friend)"
         />
+        {relationshipTypes.length > 0 && (
+          <datalist id="relationship-types">
+            {relationshipTypes.map((type, index) => (
+              <option key={index} value={type.name}>
+                {type.description}
+              </option>
+            ))}
+          </datalist>
+        )}
         <button
           onClick={addRelationship}
           className="px-5 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700"
@@ -731,7 +796,7 @@ const RelationshipsEditor = ({ relationships, onChange }) => {
 };
 
 // Voice Profile Section
-const VoiceProfileSection = ({ voice, onChange }) => {
+const VoiceProfileSection = ({ voice, onChange, characterTraits = [] }) => {
   const updateVoice = (field, value) => {
     onChange({ ...voice, [field]: value });
   };
@@ -764,14 +829,19 @@ const VoiceProfileSection = ({ voice, onChange }) => {
       </div>
 
       <div className="space-y-4">
-        <ArrayField
-          label="Personality Traits"
-          items={voice.traits || []}
-          onAdd={(val) => addArrayItem('traits', val)}
-          onRemove={(idx) => removeArrayItem('traits', idx)}
-          placeholder="e.g., Loyal, Brave, Protective"
-          color="indigo"
-        />
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Personality Traits
+          </label>
+          <TaxonomyField
+            items={voice.traits || []}
+            onAdd={(val) => addArrayItem('traits', val)}
+            onRemove={(idx) => removeArrayItem('traits', idx)}
+            placeholder="Search traits or add custom..."
+            color="indigo"
+            suggestions={characterTraits}
+          />
+        </div>
         <ArrayField
           label="Tone Descriptors"
           items={voice.tone || []}
@@ -879,11 +949,21 @@ const SafetyPackEditor = ({ data, onChange }) => {
           onChange={(e) => onChange('safety_content_rating', e.target.value)}
           className="w-full px-4 py-3 text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent bg-gray-50"
         >
-          <option value="G">G - General Audiences</option>
-          <option value="PG">PG - Parental Guidance</option>
-          <option value="PG-13">PG-13 - Parents Strongly Cautioned</option>
-          <option value="R">R - Restricted</option>
-          <option value="NC-17">NC-17 - Adults Only</option>
+          {taxonomy.contentRatings.length > 0 ? (
+            taxonomy.contentRatings.map((rating, index) => (
+              <option key={index} value={rating.name}>
+                {rating.name.toUpperCase()} {rating.description ? `- ${rating.description}` : ''}
+              </option>
+            ))
+          ) : (
+            <>
+              <option value="G">G - General Audiences</option>
+              <option value="PG">PG - Parental Guidance</option>
+              <option value="PG-13">PG-13 - Parents Strongly Cautioned</option>
+              <option value="R">R - Restricted</option>
+              <option value="NC-17">NC-17 - Adults Only</option>
+            </>
+          )}
         </select>
       </div>
 
@@ -909,6 +989,7 @@ const SafetyPackEditor = ({ data, onChange }) => {
           onRemove={removeTopic}
           placeholder="Type to search or add custom topic..."
           color="red"
+          suggestions={taxonomy.prohibitedContent}
         />
       </div>
 
@@ -1192,22 +1273,16 @@ const EvaluationSummary = ({ evaluations }) => {
 // ============================================================================
 
 // Taxonomy Field with autocomplete for prohibited topics
-const TaxonomyField = ({ items, onAdd, onRemove, placeholder, color = 'red' }) => {
+const TaxonomyField = ({ items, onAdd, onRemove, placeholder, color = 'red', suggestions = [] }) => {
   const [newValue, setNewValue] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
 
-  // Common prohibited topics taxonomy
-  const commonTopics = [
-    'violence', 'weapons', 'scary_content', 'adult_themes', 'profanity',
-    'bullying', 'dangerous_activities', 'hate_speech', 'discrimination',
-    'drugs', 'alcohol', 'gambling', 'politics', 'religion',
-    'self_harm', 'eating_disorders', 'gore', 'sexual_content',
-    'illegal_activities', 'cyberbullying', 'doxxing', 'harassment'
-  ];
-
   const itemsArray = Array.isArray(items) ? items : [];
 
-  const filteredSuggestions = commonTopics.filter(topic =>
+  // Extract tag names from taxonomy suggestions
+  const availableTags = suggestions.map(s => typeof s === 'string' ? s : s.name);
+
+  const filteredSuggestions = availableTags.filter(topic =>
     topic.toLowerCase().includes(newValue.toLowerCase()) &&
     !itemsArray.includes(topic)
   );
@@ -1222,7 +1297,8 @@ const TaxonomyField = ({ items, onAdd, onRemove, placeholder, color = 'red' }) =
   };
 
   const colorClasses = {
-    red: { bg: 'bg-red-100', text: 'text-red-800', button: 'bg-red-600 hover:bg-red-700', border: 'border-red-300' },
+    red: { bg: 'bg-red-100', text: 'text-red-800', button: 'bg-red-600 hover:bg-red-700', border: 'border-red-300', hover: 'hover:bg-red-50' },
+    indigo: { bg: 'bg-indigo-100', text: 'text-indigo-800', button: 'bg-indigo-600 hover:bg-indigo-700', border: 'border-indigo-300', hover: 'hover:bg-indigo-50' },
   };
 
   const colors = colorClasses[color] || colorClasses.red;
@@ -1280,36 +1356,71 @@ const TaxonomyField = ({ items, onAdd, onRemove, placeholder, color = 'red' }) =
 
         {/* Autocomplete suggestions */}
         {showSuggestions && filteredSuggestions.length > 0 && (
-          <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
-            {filteredSuggestions.map((suggestion, index) => (
-              <button
-                key={index}
-                onClick={() => handleAdd(suggestion)}
-                className="w-full text-left px-4 py-2 text-sm hover:bg-red-50 transition-colors border-b border-gray-100 last:border-0"
-              >
-                <span className="font-medium text-gray-900">{suggestion}</span>
-                <span className="text-xs text-gray-500 ml-2">(common topic)</span>
-              </button>
-            ))}
+          <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-64 overflow-y-auto">
+            {filteredSuggestions.map((suggestion, index) => {
+              const suggestionObj = suggestions.find(s => (typeof s === 'string' ? s : s.name) === suggestion);
+              const description = suggestionObj?.description;
+              const severity = suggestionObj?.severity;
+
+              return (
+                <button
+                  key={index}
+                  onClick={() => handleAdd(suggestion)}
+                  className={`w-full text-left px-4 py-2.5 text-sm ${colors.hover} transition-colors border-b border-gray-100 last:border-0`}
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-gray-900">{suggestion}</span>
+                        {severity && severity !== 'neutral' && (
+                          <span className={`px-1.5 py-0.5 text-xs font-medium rounded ${
+                            severity === 'high' ? 'bg-red-100 text-red-700' :
+                            severity === 'medium' ? 'bg-yellow-100 text-yellow-700' :
+                            'bg-blue-100 text-blue-700'
+                          }`}>
+                            {severity}
+                          </span>
+                        )}
+                      </div>
+                      {description && (
+                        <div className="text-xs text-gray-500 mt-0.5">{description}</div>
+                      )}
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
           </div>
         )}
       </div>
 
       {/* Popular topics quick-add */}
-      <div className="mt-3">
-        <p className="text-xs text-gray-500 mb-2">Quick add popular topics:</p>
-        <div className="flex flex-wrap gap-2">
-          {commonTopics.slice(0, 8).filter(topic => !itemsArray.includes(topic)).map((topic, index) => (
-            <button
-              key={index}
-              onClick={() => handleAdd(topic)}
-              className="px-2 py-1 text-xs bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors"
-            >
-              + {topic}
-            </button>
-          ))}
+      {availableTags.length > 0 && (
+        <div className="mt-3">
+          <p className="text-xs text-gray-500 mb-2">Quick add from taxonomy:</p>
+          <div className="flex flex-wrap gap-2">
+            {availableTags.slice(0, 10).filter(topic => !itemsArray.includes(topic)).map((topic, index) => {
+              const suggestionObj = suggestions.find(s => (typeof s === 'string' ? s : s.name) === topic);
+              const severity = suggestionObj?.severity;
+
+              return (
+                <button
+                  key={index}
+                  onClick={() => handleAdd(topic)}
+                  className={`px-2 py-1 text-xs rounded transition-colors ${
+                    severity === 'high' ? 'bg-red-100 text-red-700 hover:bg-red-200' :
+                    severity === 'medium' ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200' :
+                    'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                  title={suggestionObj?.description || ''}
+                >
+                  + {topic}
+                </button>
+              );
+            })}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };

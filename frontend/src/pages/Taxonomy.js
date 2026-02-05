@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { taxonomyApi } from '../api/client';
 
 /**
  * Taxonomy Management System
@@ -23,166 +24,143 @@ const Taxonomy = () => {
   const navigate = useNavigate();
 
   // State
-  const [activeCategory, setActiveCategory] = useState('prohibited_content');
+  const [activeCategory, setActiveCategory] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   const [selectedTag, setSelectedTag] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
 
-  // Taxonomy structure - this would come from backend in production
-  const [taxonomy, setTaxonomy] = useState({
-    prohibited_content: {
-      name: 'Prohibited Content',
-      description: 'Content types that characters must avoid',
-      icon: '🚫',
-      color: 'red',
-      tags: [
-        { id: 'violence', name: 'violence', description: 'Physical harm, fighting, weapons', severity: 'high', usage_count: 12 },
-        { id: 'adult_themes', name: 'adult_themes', description: 'Sexual content, mature themes', severity: 'high', usage_count: 8 },
-        { id: 'profanity', name: 'profanity', description: 'Cursing, inappropriate language', severity: 'medium', usage_count: 15 },
-        { id: 'scary_content', name: 'scary_content', description: 'Horror, frightening imagery', severity: 'medium', usage_count: 6 },
-        { id: 'bullying', name: 'bullying', description: 'Harassment, intimidation', severity: 'high', usage_count: 9 },
-        { id: 'dangerous_activities', name: 'dangerous_activities', description: 'Unsafe behaviors, risk-taking', severity: 'high', usage_count: 4 },
-      ]
-    },
-    character_traits: {
-      name: 'Character Traits',
-      description: 'Personality and behavioral characteristics',
-      icon: '👤',
-      color: 'blue',
-      tags: [
-        { id: 'friendly', name: 'friendly', description: 'Warm, welcoming, approachable', severity: 'neutral', usage_count: 45 },
-        { id: 'loyal', name: 'loyal', description: 'Faithful, devoted, trustworthy', severity: 'neutral', usage_count: 38 },
-        { id: 'brave', name: 'brave', description: 'Courageous, fearless, heroic', severity: 'neutral', usage_count: 22 },
-        { id: 'funny', name: 'funny', description: 'Humorous, comedic, entertaining', severity: 'neutral', usage_count: 31 },
-        { id: 'intelligent', name: 'intelligent', description: 'Smart, clever, analytical', severity: 'neutral', usage_count: 19 },
-      ]
-    },
-    content_rating: {
-      name: 'Content Ratings',
-      description: 'Age-appropriate content classifications',
-      icon: '🎬',
-      color: 'yellow',
-      tags: [
-        { id: 'g', name: 'G (General Audiences)', description: 'All ages admitted', severity: 'neutral', usage_count: 25 },
-        { id: 'pg', name: 'PG (Parental Guidance)', description: 'Some material may not be suitable for children', severity: 'neutral', usage_count: 42 },
-        { id: 'pg13', name: 'PG-13', description: 'Parents strongly cautioned', severity: 'neutral', usage_count: 18 },
-        { id: 'r', name: 'R (Restricted)', description: 'Under 17 requires parent/guardian', severity: 'neutral', usage_count: 3 },
-      ]
-    },
-    relationship_types: {
-      name: 'Relationship Types',
-      description: 'Character connection classifications',
-      icon: '🔗',
-      color: 'purple',
-      tags: [
-        { id: 'family', name: 'family', description: 'Parent, sibling, child, relative', severity: 'neutral', usage_count: 67 },
-        { id: 'friend', name: 'friend', description: 'Friendship, companionship', severity: 'neutral', usage_count: 89 },
-        { id: 'romantic', name: 'romantic', description: 'Love interest, partner', severity: 'neutral', usage_count: 23 },
-        { id: 'rival', name: 'rival', description: 'Competitor, adversary', severity: 'neutral', usage_count: 15 },
-        { id: 'mentor', name: 'mentor', description: 'Teacher, guide, advisor', severity: 'neutral', usage_count: 12 },
-        { id: 'enemy', name: 'enemy', description: 'Antagonist, villain', severity: 'neutral', usage_count: 8 },
-      ]
-    },
-    evaluation_criteria: {
-      name: 'Evaluation Criteria',
-      description: 'Assessment dimensions for character outputs',
-      icon: '📊',
-      color: 'green',
-      tags: [
-        { id: 'canon_accuracy', name: 'canon_accuracy', description: 'Adherence to established character facts', severity: 'neutral', usage_count: 156 },
-        { id: 'voice_consistency', name: 'voice_consistency', description: 'Speech patterns and personality alignment', severity: 'neutral', usage_count: 156 },
-        { id: 'safety_compliance', name: 'safety_compliance', description: 'Avoidance of prohibited content', severity: 'neutral', usage_count: 156 },
-        { id: 'legal_compliance', name: 'legal_compliance', description: 'Rights and consent adherence', severity: 'neutral', usage_count: 156 },
-      ]
-    },
-    data_quality: {
-      name: 'Data Quality',
-      description: 'Character data completeness indicators',
-      icon: '✅',
-      color: 'indigo',
-      tags: [
-        { id: 'complete', name: 'complete', description: 'All required fields populated', severity: 'neutral', usage_count: 23 },
-        { id: 'incomplete', name: 'incomplete', description: 'Missing required information', severity: 'neutral', usage_count: 12 },
-        { id: 'needs_review', name: 'needs_review', description: 'Requires manual verification', severity: 'neutral', usage_count: 8 },
-        { id: 'verified', name: 'verified', description: 'Human-verified accuracy', severity: 'neutral', usage_count: 34 },
-      ]
-    },
-  });
+  // Taxonomy data from backend
+  const [categories, setCategories] = useState([]);
 
-  const categories = Object.keys(taxonomy);
-  const currentCategory = taxonomy[activeCategory];
+  // Load taxonomy from backend
+  useEffect(() => {
+    loadTaxonomy();
+  }, []);
+
+  const loadTaxonomy = async () => {
+    setIsLoading(true);
+    try {
+      const data = await taxonomyApi.getCategories(false);
+      setCategories(data);
+
+      // Set first category as active if none selected
+      if (!activeCategory && data.length > 0) {
+        setActiveCategory(data[0].id);
+      }
+    } catch (error) {
+      console.error('Failed to load taxonomy:', error);
+      alert('Failed to load taxonomy. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const currentCategory = categories.find(cat => cat.id === activeCategory);
 
   const filteredTags = currentCategory?.tags.filter(tag =>
     tag.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     tag.description.toLowerCase().includes(searchQuery.toLowerCase())
   ) || [];
 
-  const totalTags = Object.values(taxonomy).reduce((sum, cat) => sum + cat.tags.length, 0);
-  const totalUsage = Object.values(taxonomy).reduce(
+  const totalTags = categories.reduce((sum, cat) => sum + cat.tags.length, 0);
+  const totalUsage = categories.reduce(
     (sum, cat) => sum + cat.tags.reduce((tagSum, tag) => tagSum + tag.usage_count, 0),
     0
   );
 
-  const handleAddTag = () => {
-    const newTag = {
-      id: `new_tag_${Date.now()}`,
-      name: 'new_tag',
-      description: 'New tag description',
-      severity: 'neutral',
-      usage_count: 0,
-    };
+  const handleAddTag = async () => {
+    if (!activeCategory) return;
 
-    setTaxonomy(prev => ({
-      ...prev,
-      [activeCategory]: {
-        ...prev[activeCategory],
-        tags: [...prev[activeCategory].tags, newTag],
-      },
-    }));
+    setIsSaving(true);
+    try {
+      const newTag = await taxonomyApi.createTag(activeCategory, {
+        name: 'new_tag',
+        description: 'New tag description',
+        severity: 'neutral',
+        active: true,
+      });
 
-    setSelectedTag(newTag);
-    setIsEditing(true);
+      // Reload taxonomy to get updated data
+      await loadTaxonomy();
+
+      setSelectedTag(newTag);
+      setIsEditing(true);
+    } catch (error) {
+      console.error('Failed to create tag:', error);
+      alert('Failed to create tag. Please try again.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  const handleDeleteTag = (tagId) => {
+  const handleDeleteTag = async (tagId) => {
     if (!window.confirm('Delete this tag? This may affect existing character data.')) return;
 
-    setTaxonomy(prev => ({
-      ...prev,
-      [activeCategory]: {
-        ...prev[activeCategory],
-        tags: prev[activeCategory].tags.filter(t => t.id !== tagId),
-      },
-    }));
+    setIsSaving(true);
+    try {
+      await taxonomyApi.deleteTag(tagId);
 
-    if (selectedTag?.id === tagId) {
-      setSelectedTag(null);
-      setIsEditing(false);
+      // Reload taxonomy to get updated data
+      await loadTaxonomy();
+
+      if (selectedTag?.id === tagId) {
+        setSelectedTag(null);
+        setIsEditing(false);
+      }
+    } catch (error) {
+      console.error('Failed to delete tag:', error);
+      alert(error.message || 'Failed to delete tag. Please try again.');
+    } finally {
+      setIsSaving(false);
     }
   };
 
   const handleUpdateTag = (updates) => {
-    setTaxonomy(prev => ({
-      ...prev,
-      [activeCategory]: {
-        ...prev[activeCategory],
-        tags: prev[activeCategory].tags.map(t =>
-          t.id === selectedTag.id ? { ...t, ...updates } : t
-        ),
-      },
-    }));
-
+    // Update local state immediately for responsive UI
     setSelectedTag(prev => ({ ...prev, ...updates }));
   };
 
-  const handleExport = () => {
-    const dataStr = JSON.stringify(taxonomy, null, 2);
-    const dataBlob = new Blob([dataStr], { type: 'application/json' });
-    const url = URL.createObjectURL(dataBlob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = 'taxonomy-export.json';
-    link.click();
+  const handleSaveTag = async () => {
+    if (!selectedTag) return;
+
+    setIsSaving(true);
+    try {
+      const updated = await taxonomyApi.updateTag(selectedTag.id, {
+        name: selectedTag.name,
+        description: selectedTag.description,
+        severity: selectedTag.severity,
+        active: selectedTag.active,
+      });
+
+      // Reload taxonomy to get updated data
+      await loadTaxonomy();
+
+      setSelectedTag(updated);
+      setIsEditing(false);
+    } catch (error) {
+      console.error('Failed to update tag:', error);
+      alert('Failed to update tag. Please try again.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleExport = async () => {
+    try {
+      const data = await taxonomyApi.export();
+      const dataStr = JSON.stringify(data, null, 2);
+      const dataBlob = new Blob([dataStr], { type: 'application/json' });
+      const url = URL.createObjectURL(dataBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `taxonomy-export-${new Date().toISOString().split('T')[0]}.json`;
+      link.click();
+    } catch (error) {
+      console.error('Failed to export taxonomy:', error);
+      alert('Failed to export taxonomy. Please try again.');
+    }
   };
 
   return (
@@ -243,36 +221,39 @@ const Taxonomy = () => {
                 Categories
               </h2>
               <div className="space-y-1">
-                {categories.map(catKey => {
-                  const cat = taxonomy[catKey];
-                  return (
+                {isLoading ? (
+                  <div className="text-center py-8 text-gray-500">Loading...</div>
+                ) : categories.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">No categories</div>
+                ) : (
+                  categories.map(cat => (
                     <button
-                      key={catKey}
+                      key={cat.id}
                       onClick={() => {
-                        setActiveCategory(catKey);
+                        setActiveCategory(cat.id);
                         setSelectedTag(null);
                         setIsEditing(false);
                       }}
                       className={`w-full text-left px-3 py-3 rounded-lg transition-colors ${
-                        activeCategory === catKey
+                        activeCategory === cat.id
                           ? 'bg-blue-600 text-white'
                           : 'text-gray-700 hover:bg-gray-100'
                       }`}
                     >
                       <div className="flex items-center space-x-3">
-                        <span className="text-xl">{cat.icon}</span>
+                        <span className="text-xl">{cat.icon || '📁'}</span>
                         <div className="flex-1 min-w-0">
                           <div className="text-sm font-medium truncate">{cat.name}</div>
                           <div className={`text-xs truncate ${
-                            activeCategory === catKey ? 'text-blue-100' : 'text-gray-500'
+                            activeCategory === cat.id ? 'text-blue-100' : 'text-gray-500'
                           }`}>
                             {cat.tags.length} tags
                           </div>
                         </div>
                       </div>
                     </button>
-                  );
-                })}
+                  ))
+                )}
               </div>
             </div>
           </div>
@@ -288,9 +269,10 @@ const Taxonomy = () => {
                   </div>
                   <button
                     onClick={handleAddTag}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium disabled:opacity-50"
+                    disabled={isSaving || !activeCategory}
                   >
-                    + Add Tag
+                    {isSaving ? 'Saving...' : '+ Add Tag'}
                   </button>
                 </div>
 
@@ -304,7 +286,14 @@ const Taxonomy = () => {
               </div>
 
               <div className="divide-y divide-gray-200 max-h-[600px] overflow-y-auto">
-                {filteredTags.map(tag => (
+                {isLoading ? (
+                  <div className="text-center py-12 text-gray-500">Loading tags...</div>
+                ) : filteredTags.length === 0 ? (
+                  <div className="text-center py-12 text-gray-500">
+                    {searchQuery ? 'No tags found matching your search' : 'No tags yet. Click "+ Add Tag" to create one.'}
+                  </div>
+                ) : (
+                  filteredTags.map(tag => (
                   <button
                     key={tag.id}
                     onClick={() => {
@@ -338,7 +327,8 @@ const Taxonomy = () => {
                       </div>
                     </div>
                   </button>
-                ))}
+                  ))
+                )}
               </div>
             </div>
           </div>
@@ -362,20 +352,24 @@ const Taxonomy = () => {
                         <button
                           onClick={() => {
                             setIsEditing(false);
-                            // Reload from taxonomy state
-                            const cat = taxonomy[activeCategory];
-                            const original = cat.tags.find(t => t.id === selectedTag.id);
-                            setSelectedTag(original);
+                            // Reload original tag data
+                            const cat = categories.find(c => c.id === activeCategory);
+                            const original = cat?.tags.find(t => t.id === selectedTag.id);
+                            if (original) {
+                              setSelectedTag(original);
+                            }
                           }}
                           className="px-3 py-1.5 bg-gray-200 text-gray-700 text-sm rounded-lg hover:bg-gray-300"
+                          disabled={isSaving}
                         >
                           Cancel
                         </button>
                         <button
-                          onClick={() => setIsEditing(false)}
-                          className="px-3 py-1.5 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700"
+                          onClick={handleSaveTag}
+                          className="px-3 py-1.5 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 disabled:opacity-50"
+                          disabled={isSaving}
                         >
-                          Save
+                          {isSaving ? 'Saving...' : 'Save'}
                         </button>
                       </>
                     )}
