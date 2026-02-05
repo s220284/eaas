@@ -72,7 +72,7 @@ class EvalRunCreate(BaseModel):
 class EvalResultResponse(BaseModel):
     """Schema for evaluation result response."""
     id: UUID
-    test_case_id: UUID
+    test_case_id: Optional[UUID]  # Nullable for quick evaluations
     model_response: Optional[str]
     response_latency_ms: Optional[int]
     scores: Dict[str, Optional[float]]
