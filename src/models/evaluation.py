@@ -94,7 +94,7 @@ class EvalRun(Base):
     id = Column(String(36), primary_key=True, default=generate_uuid)
     character_card_id = Column(String(36), ForeignKey("character_cards.id"))
     card_version_id = Column(String(36), ForeignKey("card_versions.id"))
-    test_suite_id = Column(String(36), ForeignKey("test_suites.id"))
+    test_suite_id = Column(String(36), ForeignKey("test_suites.id"), nullable=True)
 
     # Model configuration
     model_provider = Column(String(100))  # openai, anthropic, google

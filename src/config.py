@@ -56,8 +56,8 @@ class Settings(BaseSettings):
     # Scoring Thresholds
     canon_fidelity_threshold: float = 80.0
     voice_consistency_threshold: float = 70.0
-    brand_safety_threshold: float = 90.0
-    legal_compliance_threshold: float = 90.0
+    brand_safety_threshold: float = 80.0
+    legal_compliance_threshold: float = 80.0
     total_score_threshold: float = 80.0
 
     # Weights for aggregate scoring
