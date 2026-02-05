@@ -4,12 +4,17 @@ MASH AI - Managed Evals-as-a-Service
 FastAPI application for the Character Trust Layer platform.
 """
 
+import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from alembic.config import Config
+from alembic import command
 
 from src.config import get_settings
 from src.database import engine, Base
 from src.api import auth, characters, evaluations, organizations, data_quality, test_suites, evaluation_versions, taxonomy
+
+logger = logging.getLogger(__name__)
 
 settings = get_settings()
 
@@ -32,6 +37,19 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Run database migrations on startup
+@app.on_event("startup")
+async def startup_event():
+    """Run Alembic migrations on application startup."""
+    try:
+        logger.info("Running database migrations...")
+        alembic_cfg = Config("alembic.ini")
+        command.upgrade(alembic_cfg, "head")
+        logger.info("Database migrations completed successfully")
+    except Exception as e:
+        logger.error(f"Migration error: {e}")
+        # Don't fail startup - table might already be created by create_all
 
 # Include routers
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["authentication"])
