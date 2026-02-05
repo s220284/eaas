@@ -418,6 +418,28 @@ async def evaluate_response(
         model_response=request.model_response,
     )
 
+    # Convert result dict to EvaluateResponse if needed
+    if isinstance(result, dict):
+        # Handle dict response
+        scores = result.get('scores', {})
+        passed = result.get('passed', False)
+        explanations = result.get('explanations', {})
+        failure_reasons = result.get('failure_reasons', [])
+    else:
+        # Handle Pydantic model response
+        scores = result.scores if hasattr(result, 'scores') else result.scores.dict()
+        if isinstance(scores, object) and not isinstance(scores, dict):
+            scores = {
+                'canon_fidelity': scores.canon_fidelity,
+                'voice_consistency': scores.voice_consistency,
+                'brand_safety': scores.brand_safety,
+                'legal_compliance': scores.legal_compliance,
+                'total': scores.total,
+            }
+        passed = result.passed
+        explanations = result.explanations
+        failure_reasons = result.failure_reasons or []
+
     # Store the quick evaluation as an EvalRun for history
     # Use test_suite_id=None to mark as quick evaluation
     db_run = EvalRun(
@@ -429,13 +451,13 @@ async def evaluate_response(
         llm_config={},
         status="completed",
         total_tests=1,
-        passed_tests=1 if result.passed else 0,
-        failed_tests=0 if result.passed else 1,
-        avg_canon_fidelity=result.scores.canon_fidelity,
-        avg_voice_consistency=result.scores.voice_consistency,
-        avg_brand_safety=result.scores.brand_safety,
-        avg_legal_compliance=result.scores.legal_compliance,
-        avg_total_score=result.scores.total,
+        passed_tests=1 if passed else 0,
+        failed_tests=0 if passed else 1,
+        avg_canon_fidelity=scores.get('canon_fidelity', 0),
+        avg_voice_consistency=scores.get('voice_consistency', 0),
+        avg_brand_safety=scores.get('brand_safety', 0),
+        avg_legal_compliance=scores.get('legal_compliance', 0),
+        avg_total_score=scores.get('total', 0),
         created_by=str(current_user.id),
         started_at=datetime.utcnow(),
         completed_at=datetime.utcnow(),
@@ -449,27 +471,29 @@ async def evaluate_response(
         test_case_id=None,  # No test case for quick eval
         model_response=request.model_response,
         response_latency_ms=0,
-        score_canon_fidelity=result.scores.canon_fidelity,
-        score_voice_consistency=result.scores.voice_consistency,
-        score_brand_safety=result.scores.brand_safety,
-        score_legal_compliance=result.scores.legal_compliance,
-        score_total=result.scores.total,
-        explanation_canon=result.explanations.get("canon_fidelity", ""),
-        explanation_voice=result.explanations.get("voice_consistency", ""),
-        explanation_safety=result.explanations.get("brand_safety", ""),
-        explanation_legal=result.explanations.get("legal_compliance", ""),
-        passed=result.passed,
-        failure_reasons=result.failure_reasons or [],
+        score_canon_fidelity=scores.get('canon_fidelity', 0),
+        score_voice_consistency=scores.get('voice_consistency', 0),
+        score_brand_safety=scores.get('brand_safety', 0),
+        score_legal_compliance=scores.get('legal_compliance', 0),
+        score_total=scores.get('total', 0),
+        explanation_canon=explanations.get("canon_fidelity", ""),
+        explanation_voice=explanations.get("voice_consistency", ""),
+        explanation_safety=explanations.get("brand_safety", ""),
+        explanation_legal=explanations.get("legal_compliance", ""),
+        passed=passed,
+        failure_reasons=failure_reasons,
     )
     db.add(eval_result)
 
     db.commit()
     db.refresh(db_run)
 
-    # Add the EvalRun ID and timestamp to the result so frontend can reference it
-    result.id = db_run.id
-    result.prompt = request.prompt
-    result.model_response = request.model_response
-    result.created_at = db_run.created_at
-
-    return result
+    # Return result in proper format
+    if isinstance(result, dict):
+        result['id'] = db_run.id
+        result['created_at'] = db_run.created_at.isoformat()
+        return result
+    else:
+        result.id = db_run.id
+        result.created_at = db_run.created_at
+        return result

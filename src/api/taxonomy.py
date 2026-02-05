@@ -346,3 +346,92 @@ async def search_tags(
 
     tags = query.limit(20).all()
     return tags
+
+
+@router.post("/initialize")
+async def initialize_taxonomy(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Initialize default taxonomy. Only run once per organization."""
+    existing = db.query(TaxonomyCategory).filter(
+        TaxonomyCategory.organization_id == str(current_user.organization_id)
+    ).first()
+
+    if existing:
+        count = db.query(TaxonomyCategory).filter(
+            TaxonomyCategory.organization_id == str(current_user.organization_id)
+        ).count()
+        return {"message": "Taxonomy already initialized", "categories_count": count}
+
+    DEFAULT_TAXONOMY = {
+        "prohibited_content": {
+            "name": "Prohibited Content", "icon": "🚫", "color": "red",
+            "tags": [
+                {"name": "violence", "description": "Physical harm, fighting", "severity": "high"},
+                {"name": "adult_themes", "description": "Mature content", "severity": "high"},
+                {"name": "profanity", "description": "Vulgar language", "severity": "medium"},
+                {"name": "hate_speech", "description": "Discriminatory content", "severity": "high"},
+                {"name": "drugs", "description": "Drug use", "severity": "high"},
+            ]
+        },
+        "character_traits": {
+            "name": "Character Traits", "icon": "👤", "color": "blue",
+            "tags": [
+                {"name": "friendly", "description": "Warm and approachable"},
+                {"name": "loyal", "description": "Faithful and devoted"},
+                {"name": "brave", "description": "Courageous"},
+            ]
+        },
+        "content_rating": {
+            "name": "Content Ratings", "icon": "🎬", "color": "yellow",
+            "tags": [
+                {"name": "g", "description": "General Audiences"},
+                {"name": "pg", "description": "Parental Guidance"},
+                {"name": "pg13", "description": "Parents Cautioned"},
+                {"name": "r", "description": "Restricted"},
+            ]
+        },
+        "relationship_types": {
+            "name": "Relationship Types", "icon": "🔗", "color": "purple",
+            "tags": [
+                {"name": "family", "description": "Family member"},
+                {"name": "friend", "description": "Friend"},
+                {"name": "romantic", "description": "Love interest"},
+            ]
+        },
+    }
+
+    created_categories = []
+    for key, cat_data in DEFAULT_TAXONOMY.items():
+        category = TaxonomyCategory(
+            organization_id=str(current_user.organization_id),
+            key=key,
+            name=cat_data["name"],
+            icon=cat_data["icon"],
+            color=cat_data["color"],
+            display_order=len(created_categories),
+            system_managed=True,
+            active=True,
+            created_by=str(current_user.id),
+        )
+        db.add(category)
+        db.flush()
+
+        for tag_data in cat_data["tags"]:
+            tag = TaxonomyTag(
+                category_id=category.id,
+                name=tag_data["name"],
+                description=tag_data.get("description", ""),
+                severity=tag_data.get("severity", "neutral"),
+                tag_metadata={},
+                system_managed=True,
+                active=True,
+                created_by=str(current_user.id),
+            )
+            db.add(tag)
+
+        created_categories.append(category)
+
+    db.commit()
+    return {"message": "Taxonomy initialized", "categories_count": len(created_categories)}
