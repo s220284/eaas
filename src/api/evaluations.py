@@ -395,6 +395,8 @@ async def evaluate_response(
 
     This is the primary demo endpoint - takes a prompt and model response,
     returns scores across all dimensions.
+
+    IMPORTANT: Also stores the evaluation as an EvalRun for history tracking.
     """
     from src.services.evaluation import EvaluationService
 
@@ -415,5 +417,59 @@ async def evaluate_response(
         prompt=request.prompt,
         model_response=request.model_response,
     )
+
+    # Store the quick evaluation as an EvalRun for history
+    # Use test_suite_id=None to mark as quick evaluation
+    db_run = EvalRun(
+        character_card_id=str(request.character_card_id),
+        card_version_id=str(card.current_version_id),
+        test_suite_id=None,  # Null indicates quick evaluation
+        model_provider="quick_eval",
+        model_name="quick_eval",
+        llm_config={},
+        status="completed",
+        total_tests=1,
+        passed_tests=1 if result.passed else 0,
+        failed_tests=0 if result.passed else 1,
+        avg_canon_fidelity=result.scores.canon_fidelity,
+        avg_voice_consistency=result.scores.voice_consistency,
+        avg_brand_safety=result.scores.brand_safety,
+        avg_legal_compliance=result.scores.legal_compliance,
+        avg_total_score=result.scores.total,
+        created_by=str(current_user.id),
+        started_at=datetime.utcnow(),
+        completed_at=datetime.utcnow(),
+    )
+    db.add(db_run)
+    db.flush()
+
+    # Store the single result as an EvalResult
+    eval_result = EvalResult(
+        eval_run_id=db_run.id,
+        test_case_id=None,  # No test case for quick eval
+        model_response=request.model_response,
+        response_latency_ms=0,
+        score_canon_fidelity=result.scores.canon_fidelity,
+        score_voice_consistency=result.scores.voice_consistency,
+        score_brand_safety=result.scores.brand_safety,
+        score_legal_compliance=result.scores.legal_compliance,
+        score_total=result.scores.total,
+        explanation_canon=result.explanations.get("canon_fidelity", ""),
+        explanation_voice=result.explanations.get("voice_consistency", ""),
+        explanation_safety=result.explanations.get("brand_safety", ""),
+        explanation_legal=result.explanations.get("legal_compliance", ""),
+        passed=result.passed,
+        failure_reasons=result.failure_reasons or [],
+    )
+    db.add(eval_result)
+
+    db.commit()
+    db.refresh(db_run)
+
+    # Add the EvalRun ID and timestamp to the result so frontend can reference it
+    result.id = db_run.id
+    result.prompt = request.prompt
+    result.model_response = request.model_response
+    result.created_at = db_run.created_at
 
     return result

@@ -167,6 +167,7 @@ class ScoreBreakdown(BaseModel):
 
 class EvaluateResponse(BaseModel):
     """Schema for quick evaluation response."""
+    id: Optional[str] = None  # EvalRun ID if stored in database
     character_card_id: UUID
     prompt: str
     model_response: str
@@ -176,3 +177,4 @@ class EvaluateResponse(BaseModel):
     failure_reasons: List[str]
     canonsafe_certified: bool
     evaluation_latency_ms: int
+    created_at: Optional[datetime] = None  # Timestamp when evaluation was created
