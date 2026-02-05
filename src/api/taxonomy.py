@@ -399,51 +399,89 @@ async def initialize_taxonomy(
     }
 
     created_categories = []
+    created_tags_count = 0
+
     for key, cat_data in DEFAULT_TAXONOMY.items():
-        # Skip if category already exists
         if key in existing_keys:
-            continue
+            # Category exists - check for missing tags
+            category = db.query(TaxonomyCategory).filter(
+                TaxonomyCategory.organization_id == str(current_user.organization_id),
+                TaxonomyCategory.key == key
+            ).first()
 
-        category = TaxonomyCategory(
-            organization_id=str(current_user.organization_id),
-            key=key,
-            name=cat_data["name"],
-            icon=cat_data["icon"],
-            color=cat_data["color"],
-            display_order=len(existing_keys) + len(created_categories),
-            system_managed=True,
-            active=True,
-            created_by=str(current_user.id),
-        )
-        db.add(category)
-        db.flush()
+            # Get existing tag names for this category
+            existing_tag_names = {
+                tag.name for tag in db.query(TaxonomyTag.name).filter(
+                    TaxonomyTag.category_id == category.id
+                ).all()
+            }
 
-        for tag_data in cat_data["tags"]:
-            tag = TaxonomyTag(
-                category_id=category.id,
-                name=tag_data["name"],
-                description=tag_data.get("description", ""),
-                severity=tag_data.get("severity", "neutral"),
-                tag_metadata={},
+            # Add missing tags
+            for tag_data in cat_data["tags"]:
+                if tag_data["name"] not in existing_tag_names:
+                    tag = TaxonomyTag(
+                        category_id=category.id,
+                        name=tag_data["name"],
+                        description=tag_data.get("description", ""),
+                        severity=tag_data.get("severity", "neutral"),
+                        tag_metadata={},
+                        system_managed=True,
+                        active=True,
+                        created_by=str(current_user.id),
+                    )
+                    db.add(tag)
+                    created_tags_count += 1
+        else:
+            # Create new category
+            category = TaxonomyCategory(
+                organization_id=str(current_user.organization_id),
+                key=key,
+                name=cat_data["name"],
+                icon=cat_data["icon"],
+                color=cat_data["color"],
+                display_order=len(existing_keys) + len(created_categories),
                 system_managed=True,
                 active=True,
                 created_by=str(current_user.id),
             )
-            db.add(tag)
+            db.add(category)
+            db.flush()
 
-        created_categories.append(category)
+            # Add all tags
+            for tag_data in cat_data["tags"]:
+                tag = TaxonomyTag(
+                    category_id=category.id,
+                    name=tag_data["name"],
+                    description=tag_data.get("description", ""),
+                    severity=tag_data.get("severity", "neutral"),
+                    tag_metadata={},
+                    system_managed=True,
+                    active=True,
+                    created_by=str(current_user.id),
+                )
+                db.add(tag)
+                created_tags_count += 1
+
+            created_categories.append(category)
 
     db.commit()
 
     total_count = len(existing_keys) + len(created_categories)
+    message_parts = []
     if created_categories:
+        message_parts.append(f"Created {len(created_categories)} categories")
+    if created_tags_count:
+        message_parts.append(f"Added {created_tags_count} tags")
+
+    if message_parts:
         return {
-            "message": f"Created {len(created_categories)} new categories",
-            "created": [c.name for c in created_categories],
+            "message": ", ".join(message_parts),
+            "created_categories": [c.name for c in created_categories],
+            "created_tags": created_tags_count,
             "total_categories": total_count
         }
     else:
         return {
-            "message": "All categories already exist",
+            "message": "Taxonomy complete - nothing to add",
             "total_categories": total_count
         }
