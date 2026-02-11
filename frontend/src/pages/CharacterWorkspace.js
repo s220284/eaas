@@ -1279,17 +1279,21 @@ const TaxonomyField = ({ items, onAdd, onRemove, placeholder, color = 'red', sug
 
   const itemsArray = Array.isArray(items) ? items : [];
 
+  // Normalize items to strings (handles both string items and {topic/name} objects)
+  const getLabel = (item) => typeof item === 'string' ? item : (item.topic || item.name || String(item));
+  const itemLabels = itemsArray.map(getLabel);
+
   // Extract tag names from taxonomy suggestions
   const availableTags = suggestions.map(s => typeof s === 'string' ? s : s.name);
 
   const filteredSuggestions = availableTags.filter(topic =>
     topic.toLowerCase().includes(newValue.toLowerCase()) &&
-    !itemsArray.includes(topic)
+    !itemLabels.includes(topic)
   );
 
   const handleAdd = (value) => {
     const trimmedValue = (value || newValue).trim();
-    if (trimmedValue && !itemsArray.includes(trimmedValue)) {
+    if (trimmedValue && !itemLabels.includes(trimmedValue)) {
       onAdd(trimmedValue);
       setNewValue('');
       setShowSuggestions(false);
@@ -1311,7 +1315,7 @@ const TaxonomyField = ({ items, onAdd, onRemove, placeholder, color = 'red', sug
             key={index}
             className={`inline-flex items-center px-3 py-1 rounded-full text-sm ${colors.bg} ${colors.text} font-medium`}
           >
-            {item}
+            {getLabel(item)}
             <button
               onClick={() => onRemove(index)}
               className="ml-2 hover:opacity-70 transition-opacity"

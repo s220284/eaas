@@ -149,7 +149,7 @@ function CharacterCard({ character }) {
               <div className="flex flex-wrap gap-2">
                 {character.prohibitedTopics.map((topic, idx) => (
                   <span key={idx} className="bg-red-100 text-red-700 text-xs px-2 py-1 rounded">
-                    {topic}
+                    {typeof topic === 'string' ? topic : topic.topic || topic.name || JSON.stringify(topic)}
                   </span>
                 ))}
               </div>
