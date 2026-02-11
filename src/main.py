@@ -9,6 +9,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from alembic.config import Config
 from alembic import command
+from sqlalchemy import text as sa_text
 
 from src.config import get_settings
 from src.database import engine, Base
@@ -50,6 +51,18 @@ async def startup_event():
     except Exception as e:
         logger.error(f"Migration error: {e}")
         # Don't fail startup - table might already be created by create_all
+
+    # Ensure is_main_character has no NULLs (backfill for existing rows)
+    try:
+        from src.database import SessionLocal
+        db = SessionLocal()
+        db.execute(sa_text(
+            "UPDATE character_cards SET is_main_character = false WHERE is_main_character IS NULL"
+        ))
+        db.commit()
+        db.close()
+    except Exception as e:
+        logger.error(f"Backfill error: {e}")
 
 # Include routers
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["authentication"])

@@ -40,11 +40,14 @@ def upgrade() -> None:
     if not _column_exists('franchises', 'image_url'):
         op.add_column('franchises', sa.Column('image_url', sa.String(length=500), nullable=True))
 
-    # Set main characters for Peppa Pig franchise
+    # Default all existing rows to False, then set main characters
     character_cards = sa.table(
         'character_cards',
         sa.column('name', sa.String),
         sa.column('is_main_character', sa.Boolean),
+    )
+    op.execute(
+        character_cards.update().values(is_main_character=False)
     )
     main_names = [
         'Peppa Pig', 'George Pig', 'Mummy Pig', 'Daddy Pig', 'Suzy Sheep',

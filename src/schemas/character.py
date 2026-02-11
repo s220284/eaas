@@ -135,7 +135,7 @@ class CharacterCardResponse(BaseModel):
     name: str
     slug: str
     image_url: Optional[str] = None
-    is_main_character: bool = False
+    is_main_character: Optional[bool] = False
     status: str
     current_version_id: Optional[UUID]
     current_version: Optional[CardVersionResponse] = None
