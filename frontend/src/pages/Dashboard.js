@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { dashboardApi, charactersApi, evaluationsApi } from '../api/client';
+import { charactersApi, evaluationsApi, franchisesApi } from '../api/client';
 
 /**
  * Stat card component
  */
-const StatCard = ({ title, value, icon, color, change, link }) => {
+const StatCard = ({ title, value, icon, color, link }) => {
   const colorClasses = {
     blue: 'bg-blue-500',
     green: 'bg-green-500',
@@ -20,11 +20,6 @@ const StatCard = ({ title, value, icon, color, change, link }) => {
         <div>
           <p className="text-sm font-medium text-gray-500">{title}</p>
           <p className="text-3xl font-bold text-gray-900 mt-2">{value}</p>
-          {change && (
-            <p className={`text-sm mt-2 ${change >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-              {change >= 0 ? '+' : ''}{change}% from last week
-            </p>
-          )}
         </div>
         <div className={`w-12 h-12 ${colorClasses[color]} rounded-lg flex items-center justify-center`}>
           {icon}
@@ -59,14 +54,6 @@ const ActivityItem = ({ activity }) => {
           <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
             <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-            </svg>
-          </div>
-        );
-      case 'test_suite':
-        return (
-          <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
-            <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
             </svg>
           </div>
         );
@@ -120,6 +107,24 @@ const QuickAction = ({ title, description, icon, href, color }) => {
 };
 
 /**
+ * Format a timestamp into a relative time string
+ */
+const timeAgo = (dateStr) => {
+  const date = new Date(dateStr);
+  const now = new Date();
+  const diffMs = now - date;
+  const diffMin = Math.floor(diffMs / 60000);
+  const diffHr = Math.floor(diffMin / 60);
+  const diffDay = Math.floor(diffHr / 24);
+
+  if (diffMin < 1) return 'Just now';
+  if (diffMin < 60) return `${diffMin} minute${diffMin === 1 ? '' : 's'} ago`;
+  if (diffHr < 24) return `${diffHr} hour${diffHr === 1 ? '' : 's'} ago`;
+  if (diffDay < 7) return `${diffDay} day${diffDay === 1 ? '' : 's'} ago`;
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+};
+
+/**
  * Dashboard home page
  * Shows overview stats, recent activity, and quick actions
  */
@@ -139,49 +144,68 @@ const Dashboard = () => {
     const fetchDashboardData = async () => {
       setIsLoading(true);
       try {
-        // Try to fetch real data, fall back to demo data
-        const [charactersRes] = await Promise.allSettled([
-          charactersApi.getAll(), // Fetch all to get accurate count
+        const [charactersRes, franchisesRes, evalsRes] = await Promise.allSettled([
+          charactersApi.getAll(),
+          franchisesApi.getAll(),
+          evaluationsApi.getAll(),
         ]);
 
+        let characterCount = 0;
         if (charactersRes.status === 'fulfilled') {
           const characters = charactersRes.value?.items || charactersRes.value || [];
-          setRecentCharacters(Array.isArray(characters) ? characters.slice(0, 5) : []);
-          setStats((prev) => ({
-            ...prev,
-            characters: Array.isArray(characters) ? characters.length : 0,
-          }));
+          const charArray = Array.isArray(characters) ? characters : [];
+          setRecentCharacters(charArray.slice(0, 5));
+          characterCount = charArray.length;
         }
 
-        // Set demo activity for now
-        setRecentActivity([
-          {
-            id: 1,
-            type: 'evaluation',
-            description: 'Evaluation completed for Woody character',
-            time: '2 minutes ago',
-          },
-          {
-            id: 2,
-            type: 'character',
-            description: 'Character card updated: Buzz Lightyear',
-            time: '15 minutes ago',
-          },
-          {
-            id: 3,
-            type: 'test_suite',
-            description: 'Test suite "Brand Safety v2" created',
-            time: '1 hour ago',
-          },
-          {
-            id: 4,
-            type: 'evaluation',
-            description: 'Batch evaluation completed (25 tests)',
-            time: '3 hours ago',
-          },
-        ]);
+        let franchiseCount = 0;
+        if (franchisesRes.status === 'fulfilled') {
+          const franchises = franchisesRes.value || [];
+          franchiseCount = Array.isArray(franchises) ? franchises.length : 0;
+        }
+
+        let evalCount = 0;
+        let passRate = 0;
+        const activity = [];
+        if (evalsRes.status === 'fulfilled') {
+          const evals = evalsRes.value || [];
+          const evalArray = Array.isArray(evals) ? evals : [];
+          evalCount = evalArray.length;
+
+          // Compute pass rate from evaluations that have scores
+          const scored = evalArray.filter(e => e.overall_pass !== undefined && e.overall_pass !== null);
+          if (scored.length > 0) {
+            const passed = scored.filter(e => e.overall_pass === true).length;
+            passRate = Math.round((passed / scored.length) * 100);
+          }
+
+          // Build recent activity from real evaluations
+          const recentEvals = evalArray
+            .filter(e => e.created_at)
+            .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+            .slice(0, 5);
+
+          recentEvals.forEach(ev => {
+            const charName = ev.character_card_name || ev.character_name || 'Unknown character';
+            const passed = ev.overall_pass;
+            const score = ev.avg_total_score;
+            let desc = `Evaluation run for ${charName}`;
+            if (score != null) {
+              desc = `Evaluation for ${charName}: score ${Math.round(score)}${passed ? ' (passed)' : ' (failed)'}`;
+            }
+            activity.push({
+              id: ev.id,
+              type: 'evaluation',
+              description: desc,
+              time: timeAgo(ev.created_at),
+            });
+          });
+        }
+
+        setStats({ characters: characterCount, franchises: franchiseCount, evaluations: evalCount, passRate });
+        setRecentActivity(activity);
       } catch (error) {
-        console.error('Error fetching dashboard data:', error);
+        // Silently handle - stats will show 0
       } finally {
         setIsLoading(false);
       }
@@ -217,7 +241,7 @@ const Dashboard = () => {
         />
         <StatCard
           title="Franchises"
-          value={stats.franchises || 0}
+          value={stats.franchises}
           icon={
             <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
@@ -228,7 +252,7 @@ const Dashboard = () => {
         />
         <StatCard
           title="Evaluations"
-          value={stats.evaluations || 0}
+          value={stats.evaluations}
           icon={
             <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
@@ -239,7 +263,7 @@ const Dashboard = () => {
         />
         <StatCard
           title="Pass Rate"
-          value={`${stats.passRate || 0}%`}
+          value={`${stats.passRate}%`}
           icon={
             <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -359,7 +383,7 @@ const Dashboard = () => {
                     </span>
                   </div>
                   <p className="font-medium text-gray-900 truncate">{character.name}</p>
-                  <p className="text-xs text-gray-500 truncate">{character.franchise || 'No franchise'}</p>
+                  <p className="text-xs text-gray-500 truncate">{character.franchise_name || 'No franchise'}</p>
                 </Link>
               ))}
             </div>

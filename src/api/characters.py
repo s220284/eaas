@@ -8,7 +8,7 @@ from typing import List
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from src.database import get_db
 from src.models import CharacterCard, CardVersion, Franchise, User
@@ -209,7 +209,9 @@ async def list_character_cards(
         ).all()
     ]
 
-    query = db.query(CharacterCard).filter(CharacterCard.franchise_id.in_(org_franchise_ids))
+    query = db.query(CharacterCard).options(
+        joinedload(CharacterCard.franchise)
+    ).filter(CharacterCard.franchise_id.in_(org_franchise_ids))
     if franchise_id:
         query = query.filter(CharacterCard.franchise_id == str(franchise_id))
     if status:
@@ -227,7 +229,9 @@ async def get_character_card(
     current_user: User = Depends(get_current_user),
 ):
     """Get a character card by ID (must belong to user's organization)."""
-    card = db.query(CharacterCard).filter(CharacterCard.id == str(card_id)).first()
+    card = db.query(CharacterCard).options(
+        joinedload(CharacterCard.franchise)
+    ).filter(CharacterCard.id == str(card_id)).first()
     if not card:
         raise HTTPException(status_code=404, detail="Character card not found")
 

@@ -82,6 +82,10 @@ class CharacterCard(Base):
     test_suites = relationship("TestSuite", back_populates="character_card")
     eval_runs = relationship("EvalRun", back_populates="character_card")
 
+    @property
+    def franchise_name(self):
+        return self.franchise.name if self.franchise else None
+
     def __repr__(self):
         return f"<CharacterCard(name='{self.name}', status='{self.status}')>"
 

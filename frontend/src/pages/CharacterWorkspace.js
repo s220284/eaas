@@ -82,15 +82,11 @@ const CharacterWorkspace = () => {
   const fetchData = useCallback(async () => {
     setIsLoading(true);
     try {
-      console.log('Fetching character data for ID:', id);
-
       const charData = await charactersApi.getById(id);
-      console.log('Character data:', charData);
 
       let versionsData = [];
       try {
         versionsData = await charactersApi.getVersions(id);
-        console.log('Versions data:', versionsData);
       } catch (versionError) {
         console.error('Failed to load versions:', versionError);
         // Continue even if versions fail to load
@@ -99,7 +95,6 @@ const CharacterWorkspace = () => {
       let evalsData = [];
       try {
         evalsData = await evaluationsApi.getAll({ character_card_id: id });
-        console.log('Evaluations data:', evalsData);
       } catch (evalError) {
         console.error('Failed to load evaluations:', evalError);
         // Continue even if evaluations fail to load
@@ -116,7 +111,6 @@ const CharacterWorkspace = () => {
 
       // If still no version, create a default empty version structure
       if (!currentVer) {
-        console.log('Creating default version structure');
         currentVer = {
           id: 'new',
           character_card_id: charData.id,
@@ -135,7 +129,6 @@ const CharacterWorkspace = () => {
         };
       }
 
-      console.log('Setting version:', currentVer);
       setSelectedVersion(currentVer);
       setEditedData(transformVersionToEditData(currentVer));
     } catch (error) {
@@ -267,7 +260,6 @@ const CharacterWorkspace = () => {
 
   // If still no selected version after loading, show error with debug info
   if (!isLoading && !selectedVersion && character) {
-    console.error('Character loaded but no version available:', { character, selectedVersion, editedData });
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-50">
         <div className="text-center p-8 bg-white rounded-lg shadow-md max-w-md">
@@ -297,7 +289,6 @@ const CharacterWorkspace = () => {
 
   // Ensure we have editedData before rendering workspace
   if (!isLoading && character && selectedVersion && !editedData) {
-    console.log('Initializing editedData from selectedVersion');
     setEditedData(transformVersionToEditData(selectedVersion));
     return (
       <div className="flex items-center justify-center min-h-screen">

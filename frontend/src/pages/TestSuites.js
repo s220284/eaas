@@ -9,7 +9,7 @@ const TestSuiteModal = ({ testSuite, characters, isOpen, onClose, onSave }) => {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    character_id: '',
+    character_card_id: '',
     test_cases: [],
   });
   const [newTestCase, setNewTestCase] = useState({
@@ -26,14 +26,14 @@ const TestSuiteModal = ({ testSuite, characters, isOpen, onClose, onSave }) => {
       setFormData({
         name: testSuite.name || '',
         description: testSuite.description || '',
-        character_id: testSuite.character_id || '',
+        character_card_id: testSuite.character_card_id || '',
         test_cases: testSuite.test_cases || [],
       });
     } else {
       setFormData({
         name: '',
         description: '',
-        character_id: '',
+        character_card_id: '',
         test_cases: [],
       });
     }
@@ -44,8 +44,8 @@ const TestSuiteModal = ({ testSuite, characters, isOpen, onClose, onSave }) => {
     if (!formData.name.trim()) {
       newErrors.name = 'Name is required';
     }
-    if (!formData.character_id) {
-      newErrors.character_id = 'Please select a character';
+    if (!formData.character_card_id) {
+      newErrors.character_card_id = 'Please select a character';
     }
     if (formData.test_cases.length === 0) {
       newErrors.test_cases = 'Add at least one test case';
@@ -135,10 +135,10 @@ const TestSuiteModal = ({ testSuite, characters, isOpen, onClose, onSave }) => {
                     Character *
                   </label>
                   <select
-                    value={formData.character_id}
-                    onChange={(e) => setFormData({ ...formData, character_id: e.target.value })}
+                    value={formData.character_card_id}
+                    onChange={(e) => setFormData({ ...formData, character_card_id: e.target.value })}
                     className={`w-full px-3 py-2 border rounded-lg focus:ring-mash-500 focus:border-mash-500 ${
-                      errors.character_id ? 'border-red-300' : 'border-gray-300'
+                      errors.character_card_id ? 'border-red-300' : 'border-gray-300'
                     }`}
                   >
                     <option value="">Select character...</option>
@@ -148,8 +148,8 @@ const TestSuiteModal = ({ testSuite, characters, isOpen, onClose, onSave }) => {
                       </option>
                     ))}
                   </select>
-                  {errors.character_id && (
-                    <p className="mt-1 text-xs text-red-600">{errors.character_id}</p>
+                  {errors.character_card_id && (
+                    <p className="mt-1 text-xs text-red-600">{errors.character_card_id}</p>
                   )}
                 </div>
               </div>
@@ -617,7 +617,7 @@ const TestSuites = () => {
             <TestSuiteCard
               key={testSuite.id}
               testSuite={testSuite}
-              character={getCharacter(testSuite.character_id)}
+              character={getCharacter(testSuite.character_card_id)}
               onEdit={handleEdit}
               onRun={handleRun}
               onDelete={handleDelete}

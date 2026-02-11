@@ -132,6 +132,7 @@ class CharacterCardResponse(BaseModel):
     """Schema for character card response."""
     id: UUID
     franchise_id: UUID
+    franchise_name: Optional[str] = None
     name: str
     slug: str
     image_url: Optional[str] = None

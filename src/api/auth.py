@@ -2,6 +2,7 @@
 Authentication API routes.
 """
 
+import secrets
 from datetime import timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -158,9 +159,9 @@ def invite_user(
             detail="Email already registered",
         )
 
-    # Create user with temporary password
+    # Create user with random temporary password
     # In production, send email with password reset link
-    temp_password = "changeme123"  # TODO: Generate random password and email
+    temp_password = secrets.token_urlsafe(16)
 
     user = create_user(
         db=db,

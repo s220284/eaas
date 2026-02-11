@@ -4,11 +4,7 @@ import React, { useState } from 'react';
  * Full evaluation detail view with export capabilities
  */
 const EvaluationDetail = ({ evaluation, character, onClose }) => {
-  const [isEditing, setIsEditing] = useState(false);
-  const [editedData, setEditedData] = useState({
-    prompt: evaluation.prompt || '',
-    model_response: evaluation.model_response || '',
-  });
+  const [copySuccess, setCopySuccess] = useState(false);
 
   // Extract scores - handle both formats
   const scores = evaluation.scores || {
@@ -39,7 +35,8 @@ const EvaluationDetail = ({ evaluation, character, onClose }) => {
   const handleCopyToClipboard = () => {
     const text = generateFullText();
     navigator.clipboard.writeText(text).then(() => {
-      alert('Evaluation copied to clipboard!');
+      setCopySuccess(true);
+      setTimeout(() => setCopySuccess(false), 2000);
     });
   };
 
@@ -87,12 +84,6 @@ const EvaluationDetail = ({ evaluation, character, onClose }) => {
     URL.revokeObjectURL(url);
   };
 
-  const handleSaveEdit = () => {
-    // TODO: Implement save to backend
-    setIsEditing(false);
-    alert('Edit functionality will be implemented in the next update');
-  };
-
   if (!evaluation) return null;
 
   return (
@@ -110,12 +101,22 @@ const EvaluationDetail = ({ evaluation, character, onClose }) => {
                 {/* Action buttons */}
                 <button
                   onClick={handleCopyToClipboard}
-                  className="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+                  className={`px-3 py-2 text-sm font-medium border rounded-lg ${
+                    copySuccess
+                      ? 'text-green-700 bg-green-50 border-green-300'
+                      : 'text-gray-700 bg-white border-gray-300 hover:bg-gray-50'
+                  }`}
                   title="Copy to clipboard"
                 >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
-                  </svg>
+                  {copySuccess ? (
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  ) : (
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                    </svg>
+                  )}
                 </button>
                 <button
                   onClick={handleDownload}
@@ -186,51 +187,17 @@ const EvaluationDetail = ({ evaluation, character, onClose }) => {
               <div>
                 <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wider mb-2">Prompt</h3>
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  {isEditing ? (
-                    <textarea
-                      value={editedData.prompt}
-                      onChange={(e) => setEditedData({ ...editedData, prompt: e.target.value })}
-                      className="w-full p-2 border rounded"
-                      rows={3}
-                    />
-                  ) : (
-                    <p className="text-sm text-gray-900 whitespace-pre-wrap">{evaluation.prompt || 'N/A'}</p>
-                  )}
+                  <p className="text-sm text-gray-900 whitespace-pre-wrap">{evaluation.prompt || 'N/A'}</p>
                 </div>
               </div>
 
               <div>
                 <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wider mb-2">AI Response</h3>
                 <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
-                  {isEditing ? (
-                    <textarea
-                      value={editedData.model_response}
-                      onChange={(e) => setEditedData({ ...editedData, model_response: e.target.value })}
-                      className="w-full p-2 border rounded"
-                      rows={5}
-                    />
-                  ) : (
-                    <p className="text-sm text-gray-900 whitespace-pre-wrap">{evaluation.model_response || 'N/A'}</p>
-                  )}
+                  <p className="text-sm text-gray-900 whitespace-pre-wrap">{evaluation.model_response || 'N/A'}</p>
                 </div>
               </div>
 
-              {isEditing && (
-                <div className="flex justify-end space-x-2 print:hidden">
-                  <button
-                    onClick={() => setIsEditing(false)}
-                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleSaveEdit}
-                    className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700"
-                  >
-                    Save Changes
-                  </button>
-                </div>
-              )}
             </div>
 
             {/* Scores */}

@@ -1036,7 +1036,7 @@ const CharacterList = ({ characters, isLoading, onSelect, onCreate }) => {
                     {character.name}
                   </h3>
                   <p className="text-sm text-gray-500 truncate">
-                    {character.franchise?.name || 'No franchise'}
+                    {character.franchise_name || 'No franchise'}
                   </p>
                 </div>
               </div>
