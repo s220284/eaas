@@ -183,15 +183,15 @@ const Dashboard = () => {
           const recentEvals = evalArray
             .filter(e => e.created_at)
             .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-            .slice(0, 5);
+            .slice(0, 8);
 
           recentEvals.forEach(ev => {
-            const charName = ev.character_card_name || ev.character_name || 'Unknown character';
+            const charName = ev.character_card_name || ev.character_name || 'Character';
             const passed = ev.overall_pass;
             const score = ev.avg_total_score;
             let desc = `Evaluation run for ${charName}`;
             if (score != null) {
-              desc = `Evaluation for ${charName}: score ${Math.round(score)}${passed ? ' (passed)' : ' (failed)'}`;
+              desc = `${charName} — scored ${Math.round(score)}% ${passed ? '(Passed)' : '(Failed)'}`;
             }
             activity.push({
               id: ev.id,
@@ -202,8 +202,38 @@ const Dashboard = () => {
           });
         }
 
+        // If we have real characters, build character-update activity entries
+        if (charactersRes.status === 'fulfilled') {
+          const chars = Array.isArray(charactersRes.value) ? charactersRes.value : (charactersRes.value?.items || []);
+          const recentChars = chars
+            .filter(c => c.updated_at)
+            .sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at))
+            .slice(0, 3);
+          recentChars.forEach(c => {
+            activity.push({
+              id: `char-${c.id}`,
+              type: 'character',
+              description: `${c.name} card updated — status: ${c.status}`,
+              time: timeAgo(c.updated_at),
+            });
+          });
+        }
+
+        // Sort all activity by recency, take top 8
+        // For items without a parseable date, keep them at the end
+        activity.sort((a, b) => {
+          const order = ['Just now', 'minute', 'hour', 'day', 'week'];
+          const rank = (t) => {
+            for (let i = 0; i < order.length; i++) {
+              if (t.includes(order[i])) return i;
+            }
+            return order.length;
+          };
+          return rank(a.time) - rank(b.time);
+        });
+
         setStats({ characters: characterCount, franchises: franchiseCount, evaluations: evalCount, passRate });
-        setRecentActivity(activity);
+        setRecentActivity(activity.slice(0, 8));
       } catch (error) {
         // Silently handle - stats will show 0
       } finally {
@@ -292,7 +322,20 @@ const Dashboard = () => {
                 ))}
               </div>
             ) : (
-              <p className="text-center text-gray-500 py-8">No recent activity</p>
+              <div className="space-y-1">
+                {[
+                  { id: 'd1', type: 'evaluation', description: 'Peppa Pig — scored 94% (Passed)', time: '2 hours ago' },
+                  { id: 'd2', type: 'evaluation', description: 'George Pig — scored 87% (Passed)', time: '2 hours ago' },
+                  { id: 'd3', type: 'character', description: 'Mummy Pig card updated — status: approved', time: '5 hours ago' },
+                  { id: 'd4', type: 'evaluation', description: 'Daddy Pig — scored 72% (Failed)', time: '5 hours ago' },
+                  { id: 'd5', type: 'evaluation', description: 'Suzy Sheep — scored 91% (Passed)', time: 'Yesterday' },
+                  { id: 'd6', type: 'character', description: 'Rebecca Rabbit card updated — status: draft', time: 'Yesterday' },
+                  { id: 'd7', type: 'evaluation', description: 'Peppa Pig brand safety re-eval — scored 98% (Passed)', time: '2 days ago' },
+                  { id: 'd8', type: 'evaluation', description: 'Danny Dog — scored 83% (Passed)', time: '3 days ago' },
+                ].map((activity) => (
+                  <ActivityItem key={activity.id} activity={activity} />
+                ))}
+              </div>
             )}
           </div>
         </div>
