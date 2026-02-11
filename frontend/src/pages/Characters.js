@@ -1014,11 +1014,20 @@ const CharacterList = ({ characters, isLoading, onSelect, onCreate }) => {
             <div
               key={character.id}
               onClick={() => onSelect(character)}
-              className="bg-white rounded-xl shadow-sm p-6 cursor-pointer hover:shadow-md transition-shadow border border-gray-200 hover:border-mash-300"
+              className="bg-white rounded-xl shadow-sm p-6 cursor-pointer hover:shadow-md transition-shadow border border-gray-200 hover:border-mash-300 relative"
             >
+              {character.is_main_character && (
+                <span className="absolute top-3 right-3 px-2 py-0.5 bg-amber-100 text-amber-800 text-xs font-bold rounded-full">
+                  Main
+                </span>
+              )}
               <div className="flex items-center space-x-4">
-                <div className="w-14 h-14 bg-mash-100 rounded-xl flex items-center justify-center">
-                  <span className="text-xl font-bold text-mash-600">
+                <div className={`w-14 h-14 rounded-xl flex items-center justify-center ${
+                  character.is_main_character ? 'bg-amber-100' : 'bg-mash-100'
+                }`}>
+                  <span className={`text-xl font-bold ${
+                    character.is_main_character ? 'text-amber-600' : 'text-mash-600'
+                  }`}>
                     {character.name?.charAt(0) || '?'}
                   </span>
                 </div>

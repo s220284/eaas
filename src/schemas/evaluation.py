@@ -124,6 +124,8 @@ class EvalRunResponse(BaseModel):
     character_card_id: UUID
     card_version_id: Optional[UUID]
     test_suite_id: Optional[UUID]  # Nullable for quick evaluations
+    prompt: Optional[str] = None  # Stored for quick evaluations
+    model_response: Optional[str] = None  # Stored for quick evaluations
     model_provider: str
     model_name: str
     llm_config: dict

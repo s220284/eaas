@@ -96,6 +96,10 @@ class EvalRun(Base):
     card_version_id = Column(String(36), ForeignKey("card_versions.id"))
     test_suite_id = Column(String(36), ForeignKey("test_suites.id"), nullable=True)
 
+    # Quick eval input (stored for history; null for test suite runs)
+    prompt = Column(Text, nullable=True)
+    model_response = Column(Text, nullable=True)
+
     # Model configuration
     model_provider = Column(String(100))  # openai, anthropic, google
     model_name = Column(String(100))  # gpt-4, claude-3, etc.

@@ -9,7 +9,7 @@ from uuid import UUID
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from src.database import get_db
 from src.models import (
@@ -312,7 +312,9 @@ async def list_eval_runs(
     if not org_card_ids:
         return []
 
-    query = db.query(EvalRun).filter(EvalRun.character_card_id.in_(org_card_ids))
+    query = db.query(EvalRun).options(
+        joinedload(EvalRun.results)
+    ).filter(EvalRun.character_card_id.in_(org_card_ids))
     if character_card_id:
         query = query.filter(EvalRun.character_card_id == str(character_card_id))
     if status:
@@ -383,7 +385,9 @@ async def list_evaluations(
         ).all()
     ]
 
-    query = db.query(EvalRun).filter(EvalRun.character_card_id.in_(org_card_ids))
+    query = db.query(EvalRun).options(
+        joinedload(EvalRun.results)
+    ).filter(EvalRun.character_card_id.in_(org_card_ids))
     if character_card_id:
         query = query.filter(EvalRun.character_card_id == str(character_card_id))
 
@@ -453,6 +457,8 @@ async def evaluate_response(
         character_card_id=str(request.character_card_id),
         card_version_id=str(card.current_version_id),
         test_suite_id=None,  # Null indicates quick evaluation
+        prompt=request.prompt,
+        model_response=request.model_response,
         model_provider="quick_eval",
         model_name="quick_eval",
         llm_config={},

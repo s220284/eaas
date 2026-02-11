@@ -159,6 +159,7 @@ async def create_character_card(
         franchise_id=str(card.franchise_id),
         name=card.name,
         slug=card.slug,
+        is_main_character=card.is_main_character or False,
         status="draft",
         created_by=current_user.id,
     )
@@ -213,7 +214,10 @@ async def list_character_cards(
         query = query.filter(CharacterCard.franchise_id == str(franchise_id))
     if status:
         query = query.filter(CharacterCard.status == status)
-    return query.offset(skip).limit(limit).all()
+    return query.order_by(
+        CharacterCard.is_main_character.desc(),
+        CharacterCard.name.asc(),
+    ).offset(skip).limit(limit).all()
 
 
 @router.get("/{card_id}", response_model=CharacterCardResponse)
@@ -262,6 +266,8 @@ async def update_character_card(
         card.name = update.name
     if update.image_url is not None:
         card.image_url = update.image_url
+    if update.is_main_character is not None:
+        card.is_main_character = update.is_main_character
     if update.status is not None:
         # Validate status transition
         valid_statuses = ["draft", "pending_approval", "approved", "archived"]

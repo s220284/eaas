@@ -116,6 +116,7 @@ class CharacterCardCreate(BaseModel):
     franchise_id: UUID
     name: str
     slug: str
+    is_main_character: Optional[bool] = False
     initial_version: Optional[CardVersionCreate] = None
 
 
@@ -124,6 +125,7 @@ class CharacterCardUpdate(BaseModel):
     name: Optional[str] = None
     image_url: Optional[str] = None
     status: Optional[str] = None
+    is_main_character: Optional[bool] = None
 
 
 class CharacterCardResponse(BaseModel):
@@ -133,6 +135,7 @@ class CharacterCardResponse(BaseModel):
     name: str
     slug: str
     image_url: Optional[str] = None
+    is_main_character: bool = False
     status: str
     current_version_id: Optional[UUID]
     current_version: Optional[CardVersionResponse] = None

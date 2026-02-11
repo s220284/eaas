@@ -309,19 +309,44 @@ const QuickEvaluation = ({ characters, onEvaluate }) => {
 const EvaluationHistoryItem = ({ evaluation, characters, onClick }) => {
   const [expanded, setExpanded] = useState(false);
 
-  // Handle both EvalRun format (from /evaluations/) and quick eval format
-  const isEvalRun = evaluation.test_suite_id != null;
+  // Handle both EvalRun format (from /evaluations/ list) and EvaluateResponse (from quick eval inline result)
+  const isTestSuiteRun = evaluation.test_suite_id != null;
+  const isQuickEvalInline = evaluation.scores != null && !evaluation.avg_total_score;
 
   // Find character by ID
   const character = characters?.find(c => c.id === evaluation.character_card_id);
 
-  // For EvalRun format vs quick eval format
-  const passed = isEvalRun ? evaluation.failed_tests === 0 : evaluation.passed;
-  const totalScore = isEvalRun ? evaluation.avg_total_score : (evaluation.scores?.total || evaluation.total);
-  const canonScore = isEvalRun ? evaluation.avg_canon_fidelity : (evaluation.scores?.canon_fidelity || evaluation.canon_fidelity);
-  const voiceScore = isEvalRun ? evaluation.avg_voice_consistency : (evaluation.scores?.voice_consistency || evaluation.voice_consistency);
-  const safetyScore = isEvalRun ? evaluation.avg_brand_safety : (evaluation.scores?.brand_safety || evaluation.brand_safety);
-  const legalScore = isEvalRun ? evaluation.avg_legal_compliance : (evaluation.scores?.legal_compliance || evaluation.legal_compliance);
+  // Extract the first result for quick evals loaded from DB (results array from joinedload)
+  const firstResult = evaluation.results?.[0];
+
+  // Normalize scores across all formats
+  const passed = isQuickEvalInline ? evaluation.passed : (evaluation.failed_tests === 0);
+  const totalScore = isQuickEvalInline
+    ? evaluation.scores?.total
+    : (evaluation.avg_total_score ?? firstResult?.scores?.total);
+  const canonScore = isQuickEvalInline
+    ? evaluation.scores?.canon_fidelity
+    : (evaluation.avg_canon_fidelity ?? firstResult?.scores?.canon_fidelity);
+  const voiceScore = isQuickEvalInline
+    ? evaluation.scores?.voice_consistency
+    : (evaluation.avg_voice_consistency ?? firstResult?.scores?.voice_consistency);
+  const safetyScore = isQuickEvalInline
+    ? evaluation.scores?.brand_safety
+    : (evaluation.avg_brand_safety ?? firstResult?.scores?.brand_safety);
+  const legalScore = isQuickEvalInline
+    ? evaluation.scores?.legal_compliance
+    : (evaluation.avg_legal_compliance ?? firstResult?.scores?.legal_compliance);
+
+  // Normalize prompt and response across formats
+  const evalPrompt = evaluation.prompt || firstResult?.prompt;
+  const evalResponse = isQuickEvalInline
+    ? evaluation.model_response
+    : (evaluation.model_response || firstResult?.model_response);
+
+  // Normalize explanations
+  const explanations = isQuickEvalInline
+    ? evaluation.explanations
+    : firstResult?.explanations;
 
   // Format date
   const date = new Date(evaluation.created_at || evaluation.started_at);
@@ -356,12 +381,12 @@ const EvaluationHistoryItem = ({ evaluation, characters, onClick }) => {
           </div>
           <div className="text-left min-w-0 flex-1">
             <p className="font-medium text-gray-900">{character?.name || 'Unknown'}</p>
-            {isEvalRun ? (
+            {isTestSuiteRun ? (
               <p className="text-sm text-gray-500">
                 {evaluation.total_tests} test{evaluation.total_tests !== 1 ? 's' : ''} • {formattedDate} • {evaluation.model_name}
               </p>
             ) : (
-              <p className="text-sm text-gray-500 truncate">{evaluation.prompt}</p>
+              <p className="text-sm text-gray-500 truncate">{evalPrompt || formattedDate}</p>
             )}
           </div>
         </div>
@@ -401,7 +426,7 @@ const EvaluationHistoryItem = ({ evaluation, characters, onClick }) => {
             </div>
           </div>
 
-          {isEvalRun ? (
+          {isTestSuiteRun ? (
             <div className="space-y-2">
               <div className="flex items-center justify-between text-sm">
                 <span className="text-gray-600">Status:</span>
@@ -422,16 +447,33 @@ const EvaluationHistoryItem = ({ evaluation, characters, onClick }) => {
             </div>
           ) : (
             <div className="space-y-2">
-              <div>
-                <p className="text-xs font-medium text-gray-500 mb-1">Prompt</p>
-                <p className="text-sm text-gray-700 bg-white p-2 rounded border">{evaluation.prompt}</p>
-              </div>
-              <div>
-                <p className="text-xs font-medium text-gray-500 mb-1">Response</p>
-                <p className="text-sm text-gray-700 bg-white p-2 rounded border line-clamp-3">
-                  {evaluation.response}
-                </p>
-              </div>
+              {evalPrompt && (
+                <div>
+                  <p className="text-xs font-medium text-gray-500 mb-1">Prompt</p>
+                  <p className="text-sm text-gray-700 bg-white p-2 rounded border">{evalPrompt}</p>
+                </div>
+              )}
+              {evalResponse && (
+                <div>
+                  <p className="text-xs font-medium text-gray-500 mb-1">Response</p>
+                  <p className="text-sm text-gray-700 bg-white p-2 rounded border line-clamp-3">
+                    {evalResponse}
+                  </p>
+                </div>
+              )}
+              {explanations && (
+                <div className="mt-3 space-y-2">
+                  <p className="text-xs font-medium text-gray-500 mb-1">Analysis</p>
+                  {Object.entries(explanations).map(([key, value]) => value && (
+                    <div key={key} className="p-2 bg-white rounded border">
+                      <p className="text-xs font-medium text-gray-500 uppercase mb-1">
+                        {key.replace(/_/g, ' ')}
+                      </p>
+                      <p className="text-sm text-gray-700">{value}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>
