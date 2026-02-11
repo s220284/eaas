@@ -388,7 +388,7 @@ const CharacterWorkspace = () => {
                 <VoicePackEditor data={editedData} onChange={updateField} />
               )}
               {editedData && activeTab === 'safety' && (
-                <SafetyPackEditor data={editedData} onChange={updateField} />
+                <SafetyPackEditor data={editedData} onChange={updateField} taxonomy={taxonomy} />
               )}
               {editedData && activeTab === 'legal' && (
                 <LegalPackEditor data={editedData} onChange={updateField} />
@@ -898,7 +898,7 @@ const VoicePackEditor = ({ data, onChange }) => {
 // Safety Pack Editor
 // ============================================================================
 
-const SafetyPackEditor = ({ data, onChange }) => {
+const SafetyPackEditor = ({ data, onChange, taxonomy = { prohibitedContent: [], contentRatings: [] } }) => {
   // Ensure data exists
   if (!data) {
     return <div className="p-8 text-center text-gray-500">Loading...</div>;
@@ -1403,7 +1403,7 @@ const TaxonomyField = ({ items, onAdd, onRemove, placeholder, color = 'red', sug
         <div className="mt-3">
           <p className="text-xs text-gray-500 mb-2">Quick add from taxonomy:</p>
           <div className="flex flex-wrap gap-2">
-            {availableTags.slice(0, 10).filter(topic => !itemsArray.includes(topic)).map((topic, index) => {
+            {availableTags.slice(0, 10).filter(topic => !itemLabels.includes(topic)).map((topic, index) => {
               const suggestionObj = suggestions.find(s => (typeof s === 'string' ? s : s.name) === topic);
               const severity = suggestionObj?.severity;
 
