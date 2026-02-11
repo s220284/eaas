@@ -6,9 +6,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**MASH AI** (also called CanonSafe) — a "Character Trust Layer" platform for IP owners to control how AI models portray licensed characters through LLM-as-Judge evaluation. Scores AI responses across four dimensions: canon fidelity, voice consistency, brand safety, and legal compliance.
+**MASH AI** (CanonSafe) — a "Character Trust Layer" platform for IP owners to control how AI models portray licensed characters through LLM-as-Judge evaluation. Scores AI responses across four dimensions: canon fidelity, voice consistency, brand safety, and legal compliance.
 
-- **Backend**: Python/FastAPI with SQLAlchemy ORM → PostgreSQL (prod) / SQLite (dev)
+- **Backend**: Python/FastAPI + SQLAlchemy ORM → PostgreSQL (prod) / SQLite (dev)
 - **Frontend**: React 18 + TailwindCSS (Create React App)
 - **Deployment**: Backend on Google Cloud Run, Frontend on Vercel
 
@@ -22,6 +22,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 source venv/bin/activate
 uvicorn src.main:app --reload --port 8000
 # API docs: http://localhost:8000/api/docs
+# ReDoc: http://localhost:8000/api/redoc
 ```
 
 ### Frontend
@@ -31,6 +32,8 @@ cd frontend
 npm install   # first time only
 npm start     # runs on port 3003
 ```
+
+The frontend auto-detects the backend URL: uses `http://localhost:8000` on localhost, falls back to production Cloud Run URL otherwise. Override with `REACT_APP_API_URL` env var (build-time only, not runtime).
 
 ### Tests
 
@@ -42,7 +45,7 @@ pytest tests/test_auth.py::test_user_registration -v  # single test
 pytest --cov=src --cov-report=html            # with coverage
 ```
 
-Tests use an in-memory SQLite database (configured in `tests/conftest.py`). The `client` fixture provides a FastAPI `TestClient` with auth helpers (`registered_user`, `auth_headers`).
+Tests use in-memory SQLite with `StaticPool` (configured in `tests/conftest.py`). Each test gets a fresh database — tables created before, dropped after.
 
 ### Linting & Formatting
 
@@ -58,15 +61,19 @@ alembic revision --autogenerate -m "description"  # generate from model changes
 alembic upgrade head                               # apply migrations
 ```
 
-Migrations auto-run on backend startup via the `startup_event` in `src/main.py`.
+Migrations auto-run on backend startup (`src/main.py` startup event). Alembic reads `DATABASE_URL` from environment (not from `alembic.ini`). New models must be imported in `src/models/__init__.py` for Alembic to detect them.
 
 ### Seed Data
 
 ```bash
-python scripts/seed_demo_data.py       # orgs, users, franchises
+python scripts/seed_demo_data.py       # orgs, users, franchises (Woody)
 python scripts/populate_peppa_demo.py  # 74 Peppa Pig characters
-python scripts/init_taxonomy.py        # taxonomy categories & tags
+python scripts/init_taxonomy.py        # taxonomy categories & tags (idempotent)
+python scripts/create_demo_test_suites.py  # test cases for characters
+python scripts/run_demo_evaluations.py     # run evals and store results
 ```
+
+All scripts expect to run from repo root with `venv` activated.
 
 ---
 
@@ -86,51 +93,92 @@ src/
 └── data/            # Demo data fixtures
 ```
 
-**API prefix**: All routes are under `/api/v1/`. Routers are registered in `main.py`:
-- `auth` → `/api/v1/auth` — JWT login/register
-- `organizations` → `/api/v1/organizations`
-- `characters` → `/api/v1/characters` — character card CRUD
-- `test_suites` → `/api/v1/test-suites`
-- `evaluations` → `/api/v1/evaluations` — core evaluation engine
-- `evaluation_versions` → `/api/v1/evaluation-versions`
-- `taxonomy` → `/api/v1/taxonomy` — tag/category management
-- `data_quality` → `/api/v1/data-quality`
+All routes under `/api/v1/`. Health check at `/` and `/health`.
 
 ### Evaluation Engine (`src/services/evaluation.py`)
 
 The core business logic. `EvaluationService.evaluate_single()` takes a character card + prompt + model response and:
+
 1. Builds evaluation context from the card version
 2. Sends G-Eval style prompts to OpenAI (`gpt-4o-mini`, temperature 0.0)
-3. Scores on 4 dimensions (0-100): canon fidelity (30%), voice consistency (25%), brand safety (30%), legal compliance (15%)
-4. Computes weighted aggregate score; pass threshold is 80.0
+3. Scores 4 dimensions (0-100) with per-dimension pass thresholds:
+   - Canon Fidelity (weight 30%, threshold 80)
+   - Voice Consistency (weight 25%, threshold **70** — lower than others)
+   - Brand Safety (weight 30%, threshold 80)
+   - Legal Compliance (weight 15%, threshold 80)
+4. Computes weighted aggregate; pass threshold 80.0, CanonSafe certification at 85.0
 5. Stores results in `eval_runs` / `eval_results` tables
+
+**Mock mode**: If both `OPENAI_API_KEY` and `ANTHROPIC_API_KEY` are missing, evaluations fall back to `_mock_evaluation()` returning random scores (70-95). This allows demo mode without API keys.
+
+**Anthropic fallback**: If OpenAI key is missing but Anthropic key is set, uses `claude-3-haiku-20240307`.
 
 ### Data Model Key Relationships
 
-- Organization → Franchises → CharacterCards → CardVersions
-- TestSuites → TestCases
-- EvalRuns → EvalResults (one per dimension)
-- TaxonomyCategories → TaxonomyTags
+```
+Organization (tenant)
+  ├── Users (role: admin/member/viewer)
+  └── Franchises
+       └── CharacterCards (status: draft/pending_approval/approved/archived)
+            ├── CardVersions (immutable once created; card.current_version_id → active)
+            ├── TestSuites → TestCases
+            └── EvalRuns → EvalResults
+TaxonomyCategories → TaxonomyTags
+```
 
-### Frontend Structure
+**Important patterns**:
+- All IDs are `String(36)` UUIDs (not native UUID type — for SQLite compatibility)
+- `CardVersion` uses `ForeignKey` with `use_alter=True` and `post_update=True` to handle circular FK with `CharacterCard`
+- JSON columns (`canon_facts`, `canon_voice`, etc.) — validated in Pydantic, not at DB level
+- No soft-delete — `CharacterCard.status` enum used for archival
+- Timestamps use `datetime.utcnow` (no timezone awareness)
+
+### Auth System
+
+- JWT with HS256, 24-hour expiry, payload: `{"sub": user_id, "exp": timestamp}`
+- Password hashing: bcrypt via passlib
+- Registration creates both Organization + User atomically (user gets `admin` role)
+- Token validated on every request by querying DB for fresh user data (no caching)
+- No refresh token mechanism — requires re-login after 24h
+- Role checks are manual in route handlers (no decorator pattern)
+
+### Frontend
 
 ```
 frontend/src/
-├── App.js              # Router + AuthProvider
-├── pages/              # Route-level components (Dashboard, Characters, Evaluations, etc.)
-├── components/         # Reusable (Layout, CharacterCard, EvaluationPanel, ScoreDisplay, etc.)
-├── api/                # Axios API client
-├── contexts/           # React Context (auth state)
-└── hooks/              # Custom React hooks
+├── App.js        # Router + AuthProvider
+├── pages/        # Route-level components
+├── components/   # Reusable UI components
+├── api/client.js # Axios client with interceptors
+├── contexts/     # AuthContext (React Context)
+└── hooks/        # Custom hooks
 ```
 
-React Router v6 with `ProtectedRoute` wrapper. State management via React Context (auth) and component-level hooks.
+- Auth token stored in `localStorage` keys: `auth_token`, `user`
+- Axios interceptor auto-injects Bearer token and handles 401 → redirect to `/login`
+- React Router v6 with `ProtectedRoute` wrapper
+- No global state library — Context for auth, component state for everything else
+
+---
+
+## Environment Variables
+
+Copy `.env.example` to `.env`:
+
+```bash
+DATABASE_URL=sqlite:///./mash_demo.db   # SQLite for local dev
+SECRET_KEY=<openssl rand -hex 32>       # JWT signing key
+OPENAI_API_KEY=sk-...                   # Optional (mock mode without it)
+ANTHROPIC_API_KEY=sk-ant-...            # Optional fallback
+ENVIRONMENT=development                 # Affects CORS origins
+FRONTEND_URL=http://localhost:3001      # Added to CORS allowed origins
+```
+
+Settings loaded via Pydantic `BaseSettings` in `src/config.py` with `@lru_cache`.
 
 ---
 
 ## Deployment
-
-### Production URLs
 
 | Service | URL |
 |---------|-----|
@@ -138,7 +186,7 @@ React Router v6 with `ProtectedRoute` wrapper. State management via React Contex
 | Backend | https://mash-ai-backend-611530284830.us-central1.run.app |
 | GCP Project | `mash-ai-prod` (us-central1) |
 
-### Backend Deploy (Cloud Run)
+### Backend (Cloud Run)
 
 ```bash
 gcloud builds submit --tag gcr.io/mash-ai-prod/mash-ai-backend --project mash-ai-prod
@@ -146,33 +194,41 @@ gcloud run deploy mash-ai-backend --image gcr.io/mash-ai-prod/mash-ai-backend \
   --region us-central1 --project mash-ai-prod --allow-unauthenticated
 ```
 
-Or via `cloudbuild.yaml` (auto-triggered on push).
+Also auto-triggered via `cloudbuild.yaml` on push. Dockerfile uses Python 3.11-slim, gunicorn with UvicornWorker (2 workers, 4 threads), runs as non-root `appuser`, Cloud Run `$PORT` defaults to 8080.
 
-### Frontend Deploy
+### Frontend (Vercel)
 
-Automatic via Vercel on `git push` to main. Config in `frontend/vercel.json`.
+Automatic on `git push` to main. Config in `frontend/vercel.json`.
+
+---
+
+## Test Fixtures (`tests/conftest.py`)
+
+| Fixture | Provides |
+|---------|----------|
+| `db_session` | Fresh SQLAlchemy session (function-scoped, tables created/dropped per test) |
+| `client(db_session)` | FastAPI `TestClient` with DB override |
+| `test_user_data` | Registration dict (`test@example.com` / `TestPassword123!`) |
+| `registered_user(client)` | Registers user, returns dict with `access_token` |
+| `auth_headers(registered_user)` | `{"Authorization": "Bearer <token>"}` |
+| `sample_character_data` | Full character card structure for testing |
+| `sample_franchise_data` | Franchise creation data |
+
+**Pattern for authenticated tests**:
+```python
+def test_something(client, auth_headers):
+    response = client.post("/api/v1/endpoint", json=data, headers=auth_headers)
+```
 
 ---
 
 ## Session Continuity
 
-Read these files at session start (in order):
+Read at session start: `PROJECT_STATE.md` → `SESSION_LOG.md` → `CONTINUATION_GUIDE.md`
 
-1. `PROJECT_STATE.md` — current system status, what's working
-2. `SESSION_LOG.md` — recent work history, decisions, next steps
-3. `CONTINUATION_GUIDE.md` — quick-start commands for resuming
+Update `SESSION_LOG.md` at end of each session.
 
-Update `SESSION_LOG.md` at end of each session with work completed and next steps.
-
----
-
-## Shell Script Line Endings
-
-The Write tool outputs CRLF line endings which break `.sh` files on macOS/Linux. After writing any shell script:
-
-```bash
-sed -i '' 's/\r$//' script.sh && chmod +x script.sh
-```
+Demo credentials: `peppapig@demo.canonsafe.com` / `Peppa`
 
 ---
 
@@ -184,3 +240,11 @@ sed -i '' 's/\r$//' script.sh && chmod +x script.sh
 - Parameterized SQL queries (never f-strings)
 - Secrets via environment variables only
 - Conventional commits format (`feat:`, `fix:`, `docs:`, etc.)
+
+## Shell Script Line Endings
+
+The Write tool outputs CRLF line endings which break `.sh` files on macOS/Linux. After writing any shell script:
+
+```bash
+sed -i '' 's/\r$//' script.sh && chmod +x script.sh
+```
