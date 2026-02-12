@@ -280,6 +280,16 @@ async def create_eval_run(
     db.commit()
     db.refresh(db_run)
 
+    # Drift detection hook — check if this run drifted from baseline
+    try:
+        from src.services.drift import DriftDetectionService
+        drift_svc = DriftDetectionService()
+        drift_event = drift_svc.check_for_drift(db, db_run)
+        if drift_event:
+            db.commit()
+    except Exception:
+        pass  # Drift detection is non-blocking
+
     return db_run
 
 
@@ -498,8 +508,23 @@ async def evaluate_response(
     )
     db.add(eval_result)
 
+    # Capture judge model version for drift tracking
+    judge_info = eval_service.get_judge_model_info()
+    db_run.judge_model_name = judge_info["judge_model_name"]
+    db_run.judge_model_version = judge_info["judge_model_version"]
+
     db.commit()
     db.refresh(db_run)
+
+    # Drift detection hook — check if this run drifted from baseline
+    try:
+        from src.services.drift import DriftDetectionService
+        drift_svc = DriftDetectionService()
+        drift_event = drift_svc.check_for_drift(db, db_run)
+        if drift_event:
+            db.commit()
+    except Exception:
+        pass  # Drift detection is non-blocking
 
     # Return result in proper format
     if isinstance(result, dict):

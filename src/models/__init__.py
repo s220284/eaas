@@ -4,6 +4,7 @@ from src.models.evaluation import EvalRun, EvalResult, TestSuite, TestCase
 from src.models.evaluation_version import EvaluationVersion
 from src.models.taxonomy import TaxonomyCategory, TaxonomyTag
 from src.models.organization import Organization, User
+from src.models.drift import DriftBaseline, DriftEvent, DriftAlertConfig, RegressionTestSchedule
 
 __all__ = [
     "CharacterCard",
@@ -18,4 +19,8 @@ __all__ = [
     "TaxonomyTag",
     "Organization",
     "User",
+    "DriftBaseline",
+    "DriftEvent",
+    "DriftAlertConfig",
+    "RegressionTestSchedule",
 ]

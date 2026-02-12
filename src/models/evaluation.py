@@ -105,6 +105,16 @@ class EvalRun(Base):
     model_name = Column(String(100))  # gpt-4, claude-3, etc.
     llm_config = Column(JSON, default={})  # temperature, max_tokens, etc.
 
+    # Model version tracking (drift monitoring)
+    model_version = Column(String(100), nullable=True)        # e.g. "4.6", "gpt-4o-2024-08-06"
+    judge_model_name = Column(String(100), nullable=True)     # The LLM-as-Judge model used
+    judge_model_version = Column(String(100), nullable=True)  # Judge version for calibration tracking
+    evaluation_version_id = Column(String(36), ForeignKey("evaluation_versions.id"), nullable=True)
+
+    # Baseline tracking
+    is_baseline = Column(Boolean, default=False, nullable=False)
+    baseline_run_id = Column(String(36), ForeignKey("eval_runs.id", use_alter=True), nullable=True)
+
     # Status tracking
     status = Column(String(50), default="pending")  # pending, running, completed, failed
     started_at = Column(DateTime)
@@ -128,6 +138,8 @@ class EvalRun(Base):
     character_card = relationship("CharacterCard", back_populates="eval_runs")
     test_suite = relationship("TestSuite", back_populates="eval_runs")
     results = relationship("EvalResult", back_populates="eval_run")
+    evaluation_version = relationship("EvaluationVersion", foreign_keys=[evaluation_version_id])
+    baseline_run = relationship("EvalRun", remote_side=[id], foreign_keys=[baseline_run_id])
 
     def __repr__(self):
         return f"<EvalRun(id='{self.id}', status='{self.status}')>"

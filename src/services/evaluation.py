@@ -29,6 +29,24 @@ class EvaluationService:
     def __init__(self):
         self.openai_client = AsyncOpenAI(api_key=settings.openai_api_key) if settings.openai_api_key else None
         self.anthropic_client = AsyncAnthropic(api_key=settings.anthropic_api_key) if settings.anthropic_api_key else None
+        self._last_judge_model = None  # Populated by _run_judge_evaluation for drift tracking
+
+    def get_judge_model_info(self) -> dict:
+        """Return the resolved judge model name and version from the last evaluation.
+
+        Called after evaluate_single() to populate EvalRun.judge_model_name/version.
+        """
+        model = self._last_judge_model or "unknown"
+        # Split resolved model into name + version where possible
+        # e.g. "gpt-4o-mini-2024-07-18" -> name="gpt-4o-mini", version="2024-07-18"
+        parts = model.rsplit("-", 3)
+        if len(parts) >= 4 and parts[-3].isdigit():
+            name = "-".join(parts[:-3])
+            version = "-".join(parts[-3:])
+        else:
+            name = model
+            version = model
+        return {"judge_model_name": name, "judge_model_version": version}
 
     async def evaluate_single(
         self,
@@ -309,7 +327,11 @@ Evaluate this response for legal compliance."""
         system_prompt: str,
         user_prompt: str,
     ) -> dict:
-        """Run the LLM judge and parse the response."""
+        """Run the LLM judge and parse the response.
+
+        Also captures the resolved judge model name and version from the
+        API response for drift monitoring.
+        """
         try:
             if self.openai_client:
                 response = await self.openai_client.chat.completions.create(
@@ -322,6 +344,8 @@ Evaluate this response for legal compliance."""
                     max_tokens=500,
                 )
                 content = response.choices[0].message.content
+                # Capture resolved model for drift tracking
+                self._last_judge_model = getattr(response, 'model', 'gpt-4o-mini')
             elif self.anthropic_client:
                 response = await self.anthropic_client.messages.create(
                     model="claude-3-haiku-20240307",
@@ -331,8 +355,11 @@ Evaluate this response for legal compliance."""
                     ],
                 )
                 content = response.content[0].text
+                # Capture resolved model for drift tracking
+                self._last_judge_model = getattr(response, 'model', 'claude-3-haiku-20240307')
             else:
                 # Fallback for demo without API keys
+                self._last_judge_model = "mock"
                 return await self._mock_evaluation()
 
             return self._parse_judge_response(content)
