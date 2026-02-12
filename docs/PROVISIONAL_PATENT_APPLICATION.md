@@ -198,13 +198,13 @@ Referring now to FIG. 3, the evaluation pipeline is shown as a flow diagram:
 
     total_score = (canon_score × W_canon) + (voice_score × W_voice) + (safety_score × W_safety) + (legal_score × W_legal)
 
-   In the preferred embodiment, default weights are: W_canon = 0.30, W_voice = 0.25, W_safety = 0.30, W_legal = 0.15. These weights are configurable by the organization to reflect their priorities (e.g., a children's entertainment company might increase W_safety). As shown in FIG. 4, each per-dimension score feeds into the weighted aggregate computation along with its respective weight.
+   In the preferred embodiment, default weights are: W_canon = 0.30, W_voice = 0.25, W_safety = 0.30, W_legal = 0.15. These weights are configurable by the organization to reflect their priorities (e.g., a children's entertainment company might increase W_safety).
 
-7. The system checks (460) each per-dimension score against its configurable threshold. In the preferred embodiment, default thresholds are: canon fidelity ≥ 80, voice consistency ≥ 70, brand safety ≥ 80, legal compliance ≥ 80. Any dimension scoring below its threshold generates a failure reason string identifying the dimension and the deficit. As illustrated in FIG. 4, each dimension independently produces a per-dimension pass/fail flag based on its threshold comparison.
+7. The system checks (460) each per-dimension score against its configurable threshold. In the preferred embodiment, default thresholds are: canon fidelity ≥ 80, voice consistency ≥ 70, brand safety ≥ 80, legal compliance ≥ 80. Any dimension scoring below its threshold generates a failure reason string identifying the dimension and the deficit.
 
-8. The system determines (470) pass/fail: the response passes if and only if the failure_reasons list is empty (all dimensions met their thresholds). As shown in FIG. 4, the overall determination combines the per-dimension pass/fail flags with the aggregate score to produce a final PASSED or FAILED result with enumerated failure reasons.
+8. The system determines (470) pass/fail: the response passes if and only if the failure_reasons list is empty (all dimensions met their thresholds).
 
-9. If the response passed AND the aggregate total_score exceeds a certification threshold (default: 85.0), the response receives (480) an elevated certification status (in one embodiment, "CanonSafe Certified"). As shown in FIG. 4, a separate certification threshold check (e.g., ≥ 85.0) is applied to the total aggregate score to determine whether the response qualifies for elevated certification.
+9. If the response passed AND the aggregate total_score exceeds a certification threshold (default: 85.0), the response receives (480) an elevated certification status (in one embodiment, "CanonSafe Certified").
 
 10. The system persists (490) the complete evaluation as:
     - An **EvalRun** record containing: the character card ID, character card version ID, the prompt, the model response, the total weighted score, the pass/fail determination, failure reasons (if any), evaluation latency, and metadata
