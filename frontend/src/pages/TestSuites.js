@@ -489,7 +489,16 @@ const TestSuites = () => {
       ]);
 
       if (suitesData.status === 'fulfilled') {
-        setTestSuites(Array.isArray(suitesData.value) ? suitesData.value : suitesData.value?.items || []);
+        const allSuites = Array.isArray(suitesData.value) ? suitesData.value : suitesData.value?.items || [];
+        // Deduplicate by name+character_card_id (seed scripts may have created duplicates)
+        const seen = new Set();
+        const uniqueSuites = allSuites.filter(s => {
+          const key = `${s.name}::${s.character_card_id}`;
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        });
+        setTestSuites(uniqueSuites);
       }
 
       if (charsData.status === 'fulfilled') {

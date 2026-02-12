@@ -164,6 +164,13 @@ const Dashboard = () => {
           franchiseCount = Array.isArray(franchises) ? franchises.length : 0;
         }
 
+        // Build character lookup for eval activity names
+        const charLookup = {};
+        if (charactersRes.status === 'fulfilled') {
+          const chars = Array.isArray(charactersRes.value) ? charactersRes.value : (charactersRes.value?.items || []);
+          chars.forEach(c => { charLookup[c.id] = c.name; });
+        }
+
         let evalCount = 0;
         let passRate = 0;
         const activity = [];
@@ -172,10 +179,10 @@ const Dashboard = () => {
           const evalArray = Array.isArray(evals) ? evals : [];
           evalCount = evalArray.length;
 
-          // Compute pass rate from evaluations that have scores
-          const scored = evalArray.filter(e => e.overall_pass !== undefined && e.overall_pass !== null);
+          // Compute pass rate from evaluations that have test counts
+          const scored = evalArray.filter(e => e.total_tests > 0);
           if (scored.length > 0) {
-            const passed = scored.filter(e => e.overall_pass === true).length;
+            const passed = scored.filter(e => e.passed_tests === e.total_tests && e.total_tests > 0).length;
             passRate = Math.round((passed / scored.length) * 100);
           }
 
@@ -186,8 +193,8 @@ const Dashboard = () => {
             .slice(0, 8);
 
           recentEvals.forEach(ev => {
-            const charName = ev.character_card_name || ev.character_name || 'Character';
-            const passed = ev.overall_pass;
+            const charName = charLookup[ev.character_card_id] || 'Character';
+            const passed = ev.passed_tests === ev.total_tests && ev.total_tests > 0;
             const score = ev.avg_total_score;
             let desc = `Evaluation run for ${charName}`;
             if (score != null) {

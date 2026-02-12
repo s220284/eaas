@@ -323,7 +323,7 @@ const CharacterWorkspace = () => {
                   {character.name}
                 </h1>
                 <p className="text-sm text-gray-500">
-                  Version {selectedVersion.version_number} • {character.franchise?.name || 'No franchise'}
+                  Version {selectedVersion.version_number} • {character.franchise_name || 'No franchise'}
                 </p>
               </div>
             </div>
